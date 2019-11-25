@@ -43,7 +43,7 @@ type testg3th struct {
 }
 
 func init() {
-	// Run the app if we've been exec'd as "g3th-test" in runGMC.
+	// Run the app if we've been exec'd as "g3th-test" in runG3TH.
 	reexec.Register("g3th-test", func() {
 		if err := app.Run(os.Args); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -63,7 +63,7 @@ func TestMain(m *testing.M) {
 
 // spawns g3th with the given command line args. If the args don't set --datadir, the
 // child g gets a temporary data directory.
-func runGMC(t *testing.T, args ...string) *testg3th {
+func runG3TH(t *testing.T, args ...string) *testg3th {
 	tt := &testg3th{}
 	tt.TestCmd = cmdtest.NewTestCmd(t, tt)
 	for i, arg := range args {

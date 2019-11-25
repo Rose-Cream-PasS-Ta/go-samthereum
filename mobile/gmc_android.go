@@ -19,4 +19,4 @@
 package g3th
 
 // clientIdentifier is a hard coded identifier to report into the network.
-var clientIdentifier = "GMCDroid"
+var clientIdentifier = "G3THDroid"

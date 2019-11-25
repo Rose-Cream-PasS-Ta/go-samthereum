@@ -38,9 +38,9 @@ BOOTNODE_PUBKEY="760c4460e5336ac9bbd87952a3c7ec4363fc0a97bd31c86430806e287b437fd
 BOOTNODE_URL="enode://${BOOTNODE_PUBKEY}@${BOOTNODE_IP}:${BOOTNODE_PORT}"
 
 # static g3th configuration
-GMC_IP="192.168.33.3"
-GMC_RPC_PORT="8545"
-GMC_RPC_URL="http://${GMC_IP}:${GMC_RPC_PORT}"
+G3TH_IP="192.168.33.3"
+G3TH_RPC_PORT="8545"
+G3TH_RPC_URL="http://${G3TH_IP}:${G3TH_RPC_PORT}"
 
 usage() {
   cat >&2 <<USAGE
@@ -164,12 +164,12 @@ start_g3th_node() {
     --unlock    "${address}"
     --password  "${dir}/password"
     --rpc
-    --rpcaddr   "${GMC_IP}"
-    --rpcport   "${GMC_RPC_PORT}"
+    --rpcaddr   "${G3TH_IP}"
+    --rpcport   "${G3TH_RPC_PORT}"
     --verbosity "6"
   )
 
-  start_node "g3th" "${GMC_IP}" "$(which g3th)" ${args[@]}
+  start_node "g3th" "${G3TH_IP}" "$(which g3th)" ${args[@]}
 }
 
 start_swarm_nodes() {
@@ -208,7 +208,7 @@ start_swarm_node() {
     --bootnodes    "${BOOTNODE_URL}"
     --datadir      "${dir}"
     --identity     "${name}"
-    --ens-api      "${GMC_RPC_URL}"
+    --ens-api      "${G3TH_RPC_URL}"
     --bzznetworkid "321"
     --bzzaccount   "${address}"
     --password     "${dir}/password"

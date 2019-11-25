@@ -47,7 +47,7 @@ public class AndroidTest extends InstrumentationTestCase {
 
 	public void testAccountManagement() {
 		// Create an encrypted keystore with light crypto parameters.
-		KeyStore ks = new KeyStore(getInstrumentation().getContext().getFilesDir() + "/keystore", GMC.LightScryptN, GMC.LightScryptP);
+		KeyStore ks = new KeyStore(getInstrumentation().getContext().getFilesDir() + "/keystore", G3TH.LightScryptN, G3TH.LightScryptP);
 
 		try {
 			// Create a new account with the specified encryption passphrase.
@@ -201,7 +201,7 @@ func TestAndroid(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// Generate the mobile bindings for GMC and add the tester class
+	// Generate the mobile bindings for G3TH and add the tester class
 	gobind := exec.Command("gomobile", "bind", "-javapkg", "org.samthereum", "github.com/ethereum/go-ethereum/mobile")
 	if output, err := gobind.CombinedOutput(); err != nil {
 		t.Logf("%s", output)

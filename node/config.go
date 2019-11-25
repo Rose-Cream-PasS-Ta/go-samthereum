@@ -215,9 +215,9 @@ func DefaultWSEndpoint() string {
 // NodeName returns the devp2p node identifier.
 func (c *Config) NodeName() string {
 	name := c.name()
-	// Backwards compatibility: previous versions used title-cased "GMC", keep that.
+	// Backwards compatibility: previous versions used title-cased "G3TH", keep that.
 	if name == "g3th" || name == "g3th-testnet" {
-		name = "GMC"
+		name = "G3TH"
 	}
 	if c.UserIdent != "" {
 		name += "/" + c.UserIdent
@@ -242,7 +242,7 @@ func (c *Config) name() string {
 }
 
 // These resources are resolved differently for "g3th" instances.
-var isOldGMCResource = map[string]bool{
+var isOldG3THResource = map[string]bool{
 	"chaindata":          true,
 	"nodes":              true,
 	"nodekey":            true,
@@ -260,7 +260,7 @@ func (c *Config) resolvePath(path string) string {
 	}
 	// Backwards-compatibility: ensure that data directory files created
 	// by g3th 1.4 are used if they exist.
-	if c.name() == "g3th" && isOldGMCResource[path] {
+	if c.name() == "g3th" && isOldG3THResource[path] {
 		oldpath := ""
 		if c.Name == "g3th" {
 			oldpath = filepath.Join(c.DataDir, path)

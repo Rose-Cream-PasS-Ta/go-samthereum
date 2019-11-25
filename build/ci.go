@@ -667,7 +667,7 @@ func doWindowsInstaller(cmdline []string) {
 	// first section contains the g3th binary, second section holds the dev tools.
 	templateData := map[string]interface{}{
 		"License":  "COPYING",
-		"GMC":      g3thTool,
+		"G3TH":      g3thTool,
 		"DevTools": devTools,
 	}
 	build.Render("build/nsis.g3th.nsi", filepath.Join(*workdir, "g3th.nsi"), 0644, nil)
@@ -869,8 +869,8 @@ func doXCodeFramework(cmdline []string) {
 	// Prepare and upload a PodSpec to CocoaPods
 	if *deploy != "" {
 		meta := newPodMetadata(env, archive)
-		build.Render("build/pod.podspec", "GMC.podspec", 0755, meta)
-		build.MustRunCommand("pod", *deploy, "push", "GMC.podspec", "--allow-warnings", "--verbose")
+		build.Render("build/pod.podspec", "G3TH.podspec", 0755, meta)
+		build.MustRunCommand("pod", *deploy, "push", "G3TH.podspec", "--allow-warnings", "--verbose")
 	}
 }
 

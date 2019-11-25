@@ -13,9 +13,9 @@ PageEx license
 PageExEnd
 
 # Install g3th binary
-Section "GMC" GMC_IDX
+Section "G3TH" G3TH_IDX
   SetOutPath $INSTDIR
-  file {{.GMC}}
+  file {{.G3TH}}
 
   # Create start menu launcher
   createDirectory "$SMPROGRAMS\${APPNAME}"
@@ -24,14 +24,14 @@ Section "GMC" GMC_IDX
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "" ""
 
   # Firewall - remove rules (if exists)
-  SimpleFC::AdvRemoveRule "GMC incoming peers (TCP:30303)"
-  SimpleFC::AdvRemoveRule "GMC outgoing peers (TCP:30303)"
-  SimpleFC::AdvRemoveRule "GMC UDP discovery (UDP:30303)"
+  SimpleFC::AdvRemoveRule "G3TH incoming peers (TCP:30303)"
+  SimpleFC::AdvRemoveRule "G3TH outgoing peers (TCP:30303)"
+  SimpleFC::AdvRemoveRule "G3TH UDP discovery (UDP:30303)"
 
   # Firewall - add rules
-  SimpleFC::AdvAddRule "GMC incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" 30303 "" "" ""
-  SimpleFC::AdvAddRule "GMC outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
-  SimpleFC::AdvAddRule "GMC UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
+  SimpleFC::AdvAddRule "G3TH incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" 30303 "" "" ""
+  SimpleFC::AdvAddRule "G3TH outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
+  SimpleFC::AdvAddRule "G3TH UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
 
   # Set default IPC endpoint (https://github.com/ethereum/EIPs/issues/147)
   ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "R" "HKLM" "\\.\pipe\g3th.ipc"
@@ -54,8 +54,8 @@ Var GetInstalledSize.total
 Function GetInstalledSize
   StrCpy $GetInstalledSize.total 0
 
-  ${if} ${SectionIsSelected} ${GMC_IDX}
-    SectionGetSize ${GMC_IDX} $0
+  ${if} ${SectionIsSelected} ${G3TH_IDX}
+    SectionGetSize ${G3TH_IDX} $0
     IntOp $GetInstalledSize.total $GetInstalledSize.total + $0
   ${endif}
 

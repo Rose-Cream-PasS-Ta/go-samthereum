@@ -19,4 +19,4 @@
 package g3th
 
 // clientIdentifier is a hard coded identifier to report into the network.
-var clientIdentifier = "iGMC"
+var clientIdentifier = "iG3TH"
