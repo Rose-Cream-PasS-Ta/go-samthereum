@@ -459,10 +459,10 @@ func (s *ticketStore) searchLookupDone(lookup lookupInfo, nodes []*Node, query f
 	}
 }
 
-func (s *ticketStore) adjustWithTicket(now mclock.AbsTime, targ3thash common.Hash, t *ticket) {
+func (s *ticketStore) adjustWithTicket(now mclock.AbsTime, targethash common.Hash, t *ticket) {
 	for i, topic := range t.topics {
 		if tt, ok := s.radius[topic]; ok {
-			tt.adjustWithTicket(now, targ3thash, ticketRef{t, i})
+			tt.adjustWithTicket(now, targethash, ticketRef{t, i})
 		}
 	}
 }
@@ -861,7 +861,7 @@ func (r *topicRadius) nextTarget(forceRegular bool) lookupInfo {
 	return lookupInfo{target: target, topic: r.topic, radiusLookup: false}
 }
 
-func (r *topicRadius) adjustWithTicket(now mclock.AbsTime, targ3thash common.Hash, t ticketRef) {
+func (r *topicRadius) adjustWithTicket(now mclock.AbsTime, targethash common.Hash, t ticketRef) {
 	wait := t.t.regTime[t.idx] - t.t.issueTime
 	inside := float64(wait)/float64(targetWaitTime) - 0.5
 	if inside > 1 {
@@ -870,15 +870,15 @@ func (r *topicRadius) adjustWithTicket(now mclock.AbsTime, targ3thash common.Has
 	if inside < 0 {
 		inside = 0
 	}
-	r.adjust(now, targ3thash, t.t.node.sha, inside)
+	r.adjust(now, targethash, t.t.node.sha, inside)
 }
 
-func (r *topicRadius) adjust(now mclock.AbsTime, targ3thash, addrHash common.Hash, inside float64) {
+func (r *topicRadius) adjust(now mclock.AbsTime, targethash, addrHash common.Hash, inside float64) {
 	bucket := r.getBucketIdx(addrHash)
 	//fmt.Println("adjust", bucket, len(r.buckets), inside)
 	if bucket >= len(r.buckets) {
 		return
 	}
 	r.buckets[bucket].adjust(now, inside)
-	delete(r.buckets[bucket].lookupSent, targ3thash)
+	delete(r.buckets[bucket].lookupSent, targethash)
 }

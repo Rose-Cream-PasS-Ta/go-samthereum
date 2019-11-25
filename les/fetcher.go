@@ -640,7 +640,7 @@ func (f *lightFetcher) checkAnnouncedHeaders(fp *fetcherPeerInfo, headers []*typ
 			// we ran out of recently delivered headers but have not reached a node known by this peer yet, continue matching
 			hash, number := header.ParentHash, header.Number.Uint64()-1
 			td = f.chain.GetTd(hash, number)
-			header = f.chain.getheader(hash, number)
+			header = f.chain.GetHeader(hash, number)
 			if header == nil || td == nil {
 				log.Error("Missing parent of validated header", "hash", hash, "number", number)
 				return false
@@ -723,7 +723,7 @@ func (f *lightFetcher) checkSyncedHeaders(p *peer) {
 		go f.handler.removePeer(p.id)
 		return
 	}
-	header := f.chain.getheader(node.hash, node.number)
+	header := f.chain.GetHeader(node.hash, node.number)
 	f.newHeaders([]*types.Header{header}, []*big.Int{td})
 }
 
@@ -738,7 +738,7 @@ func (f *lightFetcher) lastTrustedTreeNode(p *peer) (*types.Header, []common.Has
 
 	canonical := f.chain.CurrentHeader()
 	if canonical.Number.Uint64() > f.lastTrustedHeader.Number.Uint64() {
-		canonical = f.chain.getheaderByNumber(f.lastTrustedHeader.Number.Uint64())
+		canonical = f.chain.GetHeaderByNumber(f.lastTrustedHeader.Number.Uint64())
 	}
 	commonAncestor := rawdb.FindCommonAncestor(f.handler.backend.chainDb, canonical, f.lastTrustedHeader)
 	if commonAncestor == nil {
@@ -751,7 +751,7 @@ func (f *lightFetcher) lastTrustedTreeNode(p *peer) (*types.Header, []common.Has
 			break
 		}
 		unapprovedHashes = append(unapprovedHashes, current.Hash())
-		current = f.chain.getheader(current.ParentHash, current.Number.Uint64()-1)
+		current = f.chain.GetHeader(current.ParentHash, current.Number.Uint64()-1)
 	}
 	return current, unapprovedHashes
 }
@@ -772,7 +772,7 @@ func (f *lightFetcher) checkKnownNode(p *peer, n *fetcherTreeNode) bool {
 	if td == nil {
 		return false
 	}
-	header := f.chain.getheader(n.hash, n.number)
+	header := f.chain.GetHeader(n.hash, n.number)
 	// check the availability of both header and td because reads are not protected by chain db mutex
 	// Note: returning false is always safe here
 	if header == nil {

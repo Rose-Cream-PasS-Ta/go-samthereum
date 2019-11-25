@@ -302,15 +302,15 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 					var origin *types.Header
 					if hashMode {
 						if first {
-							origin = h.blockchain.getheaderByHash(query.Origin.Hash)
+							origin = h.blockchain.GetHeaderByHash(query.Origin.Hash)
 							if origin != nil {
 								query.Origin.Number = origin.Number.Uint64()
 							}
 						} else {
-							origin = h.blockchain.getheader(query.Origin.Hash, query.Origin.Number)
+							origin = h.blockchain.GetHeader(query.Origin.Hash, query.Origin.Number)
 						}
 					} else {
-						origin = h.blockchain.getheaderByNumber(query.Origin.Number)
+						origin = h.blockchain.GetHeaderByNumber(query.Origin.Number)
 					}
 					if origin == nil {
 						atomic.AddUint32(&p.invalidCount, 1)
@@ -341,7 +341,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 							p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 							unknown = true
 						} else {
-							if header := h.blockchain.getheaderByNumber(next); header != nil {
+							if header := h.blockchain.GetHeaderByNumber(next); header != nil {
 								nextHash := header.Hash()
 								expOldHash, _ := h.blockchain.GetAncestor(nextHash, next, query.Skip+1, &maxNonCanonical)
 								if expOldHash == query.Origin.Hash {
@@ -455,7 +455,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 						return
 					}
 					// Look up the root hash belonging to the request
-					header := h.blockchain.getheaderByHash(request.BHash)
+					header := h.blockchain.GetHeaderByHash(request.BHash)
 					if header == nil {
 						p.Log().Warn("Failed to retrieve associate header for code", "hash", request.BHash)
 						atomic.AddUint32(&p.invalidCount, 1)
@@ -532,7 +532,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 					// Retrieve the requested block's receipts, skipping if unknown to us
 					results := h.blockchain.GetReceiptsByHash(hash)
 					if results == nil {
-						if header := h.blockchain.getheaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
+						if header := h.blockchain.GetHeaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
 							atomic.AddUint32(&p.invalidCount, 1)
 							continue
 						}
@@ -594,7 +594,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 					if request.BHash != lastBHash {
 						root, lastBHash = common.Hash{}, request.BHash
 
-						if header = h.blockchain.getheaderByHash(request.BHash); header == nil {
+						if header = h.blockchain.GetHeaderByHash(request.BHash); header == nil {
 							p.Log().Warn("Failed to retrieve header for proof", "hash", request.BHash)
 							atomic.AddUint32(&p.invalidCount, 1)
 							continue

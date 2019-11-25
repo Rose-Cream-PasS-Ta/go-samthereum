@@ -45,7 +45,7 @@ type Config struct {
 	EVMConfig   vm.Config
 
 	State     *state.StateDB
-	g3thashFn func(n uint64) common.Hash
+	gethashFn func(n uint64) common.Hash
 }
 
 // sets defaults on the config
@@ -80,8 +80,8 @@ func setDefaults(cfg *Config) {
 	if cfg.BlockNumber == nil {
 		cfg.BlockNumber = new(big.Int)
 	}
-	if cfg.g3thashFn == nil {
-		cfg.g3thashFn = func(n uint64) common.Hash {
+	if cfg.gethashFn == nil {
+		cfg.gethashFn = func(n uint64) common.Hash {
 			return common.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
 		}
 	}
