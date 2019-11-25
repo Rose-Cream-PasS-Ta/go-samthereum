@@ -27,15 +27,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/p2p/simulations/adapters"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/net/websocket"
 )
 
 // DefaultClient is the default simulation API client which expects the API
@@ -264,10 +263,8 @@ func (c *Client) Send(method, path string, in, out interface{}) error {
 
 // Server is an HTTP server providing an API to manage a simulation network
 type Server struct {
-	router     *httprouter.Router
-	network    *Network
-	mockerStop chan struct{} // when set, stops the current mocker
-	mockerMtx  sync.Mutex    // synchronises access to the mockerStop field
+	router  *httprouter.Router
+	network *Network
 }
 
 // NewServer returns a new simulation API server
@@ -281,10 +278,6 @@ func NewServer(network *Network) *Server {
 	s.GET("/", s.GetNetwork)
 	s.POST("/start", s.StartNetwork)
 	s.POST("/stop", s.StopNetwork)
-	s.POST("/mocker/start", s.StartMocker)
-	s.POST("/mocker/stop", s.StopMocker)
-	s.GET("/mocker", s.GetMockers)
-	s.POST("/reset", s.ResetNetwork)
 	s.GET("/events", s.StreamNetworkEvents)
 	s.GET("/snapshot", s.CreateSnapshot)
 	s.POST("/snapshot", s.LoadSnapshot)
@@ -325,64 +318,17 @@ func (s *Server) StopNetwork(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// StartMocker starts the mocker node simulation
-func (s *Server) StartMocker(w http.ResponseWriter, req *http.Request) {
-	s.mockerMtx.Lock()
-	defer s.mockerMtx.Unlock()
-	if s.mockerStop != nil {
-		http.Error(w, "mocker already running", http.StatusInternalServerError)
-		return
-	}
-	mockerType := req.FormValue("mocker-type")
-	mockerFn := LookupMocker(mockerType)
-	if mockerFn == nil {
-		http.Error(w, fmt.Sprintf("unknown mocker type %q", mockerType), http.StatusBadRequest)
-		return
-	}
-	nodeCount, err := strconv.Atoi(req.FormValue("node-count"))
-	if err != nil {
-		http.Error(w, "invalid node-count provided", http.StatusBadRequest)
-		return
-	}
-	s.mockerStop = make(chan struct{})
-	go mockerFn(s.network, s.mockerStop, nodeCount)
-
-	w.WriteHeader(http.StatusOK)
-}
-
-// StopMocker stops the mocker node simulation
-func (s *Server) StopMocker(w http.ResponseWriter, req *http.Request) {
-	s.mockerMtx.Lock()
-	defer s.mockerMtx.Unlock()
-	if s.mockerStop == nil {
-		http.Error(w, "stop channel not initialized", http.StatusInternalServerError)
-		return
-	}
-	close(s.mockerStop)
-	s.mockerStop = nil
-
-	w.WriteHeader(http.StatusOK)
-}
-
-// GetMockerList returns a list of available mockers
-func (s *Server) GetMockers(w http.ResponseWriter, req *http.Request) {
-
-	list := GetMockerList()
-	s.JSON(w, http.StatusOK, list)
-}
-
-// ResetNetwork resets all properties of a network to its initial (empty) state
-func (s *Server) ResetNetwork(w http.ResponseWriter, req *http.Request) {
-	s.network.Reset()
-
-	w.WriteHeader(http.StatusOK)
-}
-
 // StreamNetworkEvents streams network events as a server-sent-events stream
 func (s *Server) StreamNetworkEvents(w http.ResponseWriter, req *http.Request) {
 	events := make(chan *Event)
 	sub := s.network.events.Subscribe(events)
 	defer sub.Unsubscribe()
+
+	// stop the stream if the client goes away
+	var clientGone <-chan bool
+	if cn, ok := w.(http.CloseNotifier); ok {
+		clientGone = cn.CloseNotify()
+	}
 
 	// write writes the given event and data to the stream like:
 	//
@@ -449,7 +395,6 @@ func (s *Server) StreamNetworkEvents(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	clientGone := req.Context().Done()
 	for {
 		select {
 		case event := <-events:
@@ -556,8 +501,7 @@ func (s *Server) LoadSnapshot(w http.ResponseWriter, req *http.Request) {
 
 // CreateNode creates a node in the network using the given configuration
 func (s *Server) CreateNode(w http.ResponseWriter, req *http.Request) {
-	config := &adapters.NodeConfig{}
-
+	config := adapters.RandomNodeConfig()
 	err := json.NewDecoder(req.Body).Decode(config)
 	if err != nil && err != io.EOF {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -649,20 +593,16 @@ func (s *Server) Options(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-var wsUpgrade = websocket.Upgrader{
-	CheckOrigin: func(*http.Request) bool { return true },
-}
-
 // NodeRPC forwards RPC requests to a node in the network via a WebSocket
 // connection
 func (s *Server) NodeRPC(w http.ResponseWriter, req *http.Request) {
-	conn, err := wsUpgrade.Upgrade(w, req, nil)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
 	node := req.Context().Value("node").(*Node)
-	node.ServeRPC(conn)
+
+	handler := func(conn *websocket.Conn) {
+		node.ServeRPC(conn)
+	}
+
+	websocket.Server{Handler: handler}.ServeHTTP(w, req)
 }
 
 // ServeHTTP implements the http.Handler interface by delegating to the
@@ -705,12 +645,11 @@ func (s *Server) wrapHandler(handler http.HandlerFunc) httprouter.Handle {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
-		ctx := req.Context()
+		ctx := context.Background()
 
 		if id := params.ByName("nodeid"); id != "" {
-			var nodeID enode.ID
 			var node *Node
-			if nodeID.UnmarshalText([]byte(id)) == nil {
+			if nodeID, err := discover.HexID(id); err == nil {
 				node = s.network.GetNode(nodeID)
 			} else {
 				node = s.network.GetNodeByName(id)
@@ -723,9 +662,8 @@ func (s *Server) wrapHandler(handler http.HandlerFunc) httprouter.Handle {
 		}
 
 		if id := params.ByName("peerid"); id != "" {
-			var peerID enode.ID
 			var peer *Node
-			if peerID.UnmarshalText([]byte(id)) == nil {
+			if peerID, err := discover.HexID(id); err == nil {
 				peer = s.network.GetNode(peerID)
 			} else {
 				peer = s.network.GetNodeByName(id)

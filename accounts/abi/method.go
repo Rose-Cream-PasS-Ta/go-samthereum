@@ -18,73 +18,180 @@ package abi
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Method represents a callable given a `Name` and whether the method is a constant.
+// Callable method given a `Name` and whether the method is a constant.
 // If the method is `Const` no transaction needs to be created for this
 // particular Method call. It can easily be simulated using a local VM.
 // For example a `Balance()` method only needs to retrieve something
-// from the storage and therefore requires no Tx to be send to the
+// from the storage and therefor requires no Tx to be send to the
 // network. A method such as `Transact` does require a Tx and thus will
-// be flagged `false`.
+// be flagged `true`.
 // Input specifies the required input parameters for this gives method.
 type Method struct {
-	// Name is the method name used for internal representation. It's derived from
-	// the raw name and a suffix will be added in the case of a function overload.
-	//
-	// e.g.
-	// There are two functions have same name:
-	// * foo(int,int)
-	// * foo(uint,uint)
-	// The method name of the first one will be resolved as foo while the second one
-	// will be resolved as foo0.
-	Name string
-	// RawName is the raw method name parsed from ABI.
-	RawName string
+	Name    string
 	Const   bool
-	Inputs  Arguments
-	Outputs Arguments
+	Inputs  []Argument
+	Outputs []Argument
+}
+
+func (method Method) pack(args ...interface{}) ([]byte, error) {
+	// Make sure arguments match up and pack them
+	if len(args) != len(method.Inputs) {
+		return nil, fmt.Errorf("argument count mismatch: %d for %d", len(args), len(method.Inputs))
+	}
+	// variable input is the output appended at the end of packed
+	// output. This is used for strings and bytes types input.
+	var variableInput []byte
+
+	var ret []byte
+	for i, a := range args {
+		input := method.Inputs[i]
+		// pack the input
+		packed, err := input.Type.pack(reflect.ValueOf(a))
+		if err != nil {
+			return nil, fmt.Errorf("`%s` %v", method.Name, err)
+		}
+
+		// check for a slice type (string, bytes, slice)
+		if input.Type.requiresLengthPrefix() {
+			// calculate the offset
+			offset := len(method.Inputs)*32 + len(variableInput)
+			// set the offset
+			ret = append(ret, packNum(reflect.ValueOf(offset))...)
+			// Append the packed output to the variable input. The variable input
+			// will be appended at the end of the input.
+			variableInput = append(variableInput, packed...)
+		} else {
+			// append the packed value to the input
+			ret = append(ret, packed...)
+		}
+	}
+	// append the variable input at the end of the packed input
+	ret = append(ret, variableInput...)
+
+	return ret, nil
+}
+
+// unpacks a method return tuple into a struct of corresponding go types
+//
+// Unpacking can be done into a struct or a slice/array.
+func (method Method) tupleUnpack(v interface{}, output []byte) error {
+	// make sure the passed value is a pointer
+	valueOf := reflect.ValueOf(v)
+	if reflect.Ptr != valueOf.Kind() {
+		return fmt.Errorf("abi: Unpack(non-pointer %T)", v)
+	}
+
+	var (
+		value = valueOf.Elem()
+		typ   = value.Type()
+	)
+
+	j := 0
+	for i := 0; i < len(method.Outputs); i++ {
+		toUnpack := method.Outputs[i]
+		if toUnpack.Type.T == ArrayTy {
+			// need to move this up because they read sequentially
+			j += toUnpack.Type.Size
+		}
+		marshalledValue, err := toGoType((i+j)*32, toUnpack.Type, output)
+		if err != nil {
+			return err
+		}
+		reflectValue := reflect.ValueOf(marshalledValue)
+
+		switch value.Kind() {
+		case reflect.Struct:
+			for j := 0; j < typ.NumField(); j++ {
+				field := typ.Field(j)
+				// TODO read tags: `abi:"fieldName"`
+				if field.Name == strings.ToUpper(method.Outputs[i].Name[:1])+method.Outputs[i].Name[1:] {
+					if err := set(value.Field(j), reflectValue, method.Outputs[i]); err != nil {
+						return err
+					}
+				}
+			}
+		case reflect.Slice, reflect.Array:
+			if value.Len() < i {
+				return fmt.Errorf("abi: insufficient number of arguments for unpack, want %d, got %d", len(method.Outputs), value.Len())
+			}
+			v := value.Index(i)
+			if v.Kind() != reflect.Ptr && v.Kind() != reflect.Interface {
+				return fmt.Errorf("abi: cannot unmarshal %v in to %v", v.Type(), reflectValue.Type())
+			}
+			reflectValue := reflect.ValueOf(marshalledValue)
+			if err := set(v.Elem(), reflectValue, method.Outputs[i]); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("abi: cannot unmarshal tuple in to %v", typ)
+		}
+	}
+	return nil
+}
+
+func (method Method) isTupleReturn() bool { return len(method.Outputs) > 1 }
+
+func (method Method) singleUnpack(v interface{}, output []byte) error {
+	// make sure the passed value is a pointer
+	valueOf := reflect.ValueOf(v)
+	if reflect.Ptr != valueOf.Kind() {
+		return fmt.Errorf("abi: Unpack(non-pointer %T)", v)
+	}
+
+	value := valueOf.Elem()
+
+	marshalledValue, err := toGoType(0, method.Outputs[0].Type, output)
+	if err != nil {
+		return err
+	}
+	if err := set(value, reflect.ValueOf(marshalledValue), method.Outputs[0]); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Sig returns the methods string signature according to the ABI spec.
 //
 // Example
 //
-//     function foo(uint32 a, int b) = "foo(uint32,int256)"
+//     function foo(uint32 a, int b)    =    "foo(uint32,int256)"
 //
 // Please note that "int" is substitute for its canonical representation "int256"
-func (method Method) Sig() string {
-	types := make([]string, len(method.Inputs))
-	for i, input := range method.Inputs {
+func (m Method) Sig() string {
+	types := make([]string, len(m.Inputs))
+	i := 0
+	for _, input := range m.Inputs {
 		types[i] = input.Type.String()
+		i++
 	}
-	return fmt.Sprintf("%v(%v)", method.RawName, strings.Join(types, ","))
+	return fmt.Sprintf("%v(%v)", m.Name, strings.Join(types, ","))
 }
 
-func (method Method) String() string {
-	inputs := make([]string, len(method.Inputs))
-	for i, input := range method.Inputs {
-		inputs[i] = fmt.Sprintf("%v %v", input.Type, input.Name)
+func (m Method) String() string {
+	inputs := make([]string, len(m.Inputs))
+	for i, input := range m.Inputs {
+		inputs[i] = fmt.Sprintf("%v %v", input.Name, input.Type)
 	}
-	outputs := make([]string, len(method.Outputs))
-	for i, output := range method.Outputs {
-		outputs[i] = output.Type.String()
+	outputs := make([]string, len(m.Outputs))
+	for i, output := range m.Outputs {
 		if len(output.Name) > 0 {
-			outputs[i] += fmt.Sprintf(" %v", output.Name)
+			outputs[i] = fmt.Sprintf("%v ", output.Name)
 		}
+		outputs[i] += output.Type.String()
 	}
 	constant := ""
-	if method.Const {
+	if m.Const {
 		constant = "constant "
 	}
-	return fmt.Sprintf("function %v(%v) %sreturns(%v)", method.RawName, strings.Join(inputs, ", "), constant, strings.Join(outputs, ", "))
+	return fmt.Sprintf("function %v(%v) %sreturns(%v)", m.Name, strings.Join(inputs, ", "), constant, strings.Join(outputs, ", "))
 }
 
-// ID returns the canonical representation of the method's signature used by the
-// abi definition to identify method names and types.
-func (method Method) ID() []byte {
-	return crypto.Keccak256([]byte(method.Sig()))[:4]
+func (m Method) Id() []byte {
+	return crypto.Keccak256([]byte(m.Sig()))[:4]
 }

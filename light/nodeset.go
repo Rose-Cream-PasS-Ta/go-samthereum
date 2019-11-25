@@ -1,4 +1,4 @@
-// Copyright 2017 The go-ethereum Authors
+// Copyright 2014 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
 // The go-ethereum library is free software: you can redistribute it and/or modify
@@ -22,16 +22,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/trie"
 )
 
 // NodeSet stores a set of trie nodes. It implements trie.Database and can also
 // act as a cache for another trie.Database.
 type NodeSet struct {
-	nodes map[string][]byte
-	order []string
-
+	db       map[string][]byte
 	dataSize int
 	lock     sync.RWMutex
 }
@@ -39,7 +37,7 @@ type NodeSet struct {
 // NewNodeSet creates an empty node set
 func NewNodeSet() *NodeSet {
 	return &NodeSet{
-		nodes: make(map[string][]byte),
+		db: make(map[string][]byte),
 	}
 }
 
@@ -48,24 +46,10 @@ func (db *NodeSet) Put(key []byte, value []byte) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
 
-	if _, ok := db.nodes[string(key)]; ok {
-		return nil
+	if _, ok := db.db[string(key)]; !ok {
+		db.db[string(key)] = common.CopyBytes(value)
+		db.dataSize += len(value)
 	}
-	keystr := string(key)
-
-	db.nodes[keystr] = common.CopyBytes(value)
-	db.order = append(db.order, keystr)
-	db.dataSize += len(value)
-
-	return nil
-}
-
-// Delete removes a node from the set
-func (db *NodeSet) Delete(key []byte) error {
-	db.lock.Lock()
-	defer db.lock.Unlock()
-
-	delete(db.nodes, string(key))
 	return nil
 }
 
@@ -74,7 +58,7 @@ func (db *NodeSet) Get(key []byte) ([]byte, error) {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
 
-	if entry, ok := db.nodes[string(key)]; ok {
+	if entry, ok := db.db[string(key)]; ok {
 		return entry, nil
 	}
 	return nil, errors.New("not found")
@@ -91,7 +75,7 @@ func (db *NodeSet) KeyCount() int {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
 
-	return len(db.nodes)
+	return len(db.db)
 }
 
 // DataSize returns the aggregated data size of nodes in the set
@@ -108,27 +92,27 @@ func (db *NodeSet) NodeList() NodeList {
 	defer db.lock.RUnlock()
 
 	var values NodeList
-	for _, key := range db.order {
-		values = append(values, db.nodes[key])
+	for _, value := range db.db {
+		values = append(values, value)
 	}
 	return values
 }
 
 // Store writes the contents of the set to the given database
-func (db *NodeSet) Store(target ethdb.KeyValueWriter) {
+func (db *NodeSet) Store(target trie.Database) {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
 
-	for key, value := range db.nodes {
+	for key, value := range db.db {
 		target.Put([]byte(key), value)
 	}
 }
 
-// NodeList stores an ordered list of trie nodes. It implements ethdb.KeyValueWriter.
+// NodeList stores an ordered list of trie nodes. It implements trie.DatabaseWriter.
 type NodeList []rlp.RawValue
 
 // Store writes the contents of the list to the given database
-func (n NodeList) Store(db ethdb.KeyValueWriter) {
+func (n NodeList) Store(db trie.Database) {
 	for _, node := range n {
 		db.Put(crypto.Keccak256(node), node)
 	}
@@ -145,11 +129,6 @@ func (n NodeList) NodeSet() *NodeSet {
 func (n *NodeList) Put(key []byte, value []byte) error {
 	*n = append(*n, value)
 	return nil
-}
-
-// Delete panics as there's no reason to remove a node from the list.
-func (n *NodeList) Delete(key []byte) error {
-	panic("not supported")
 }
 
 // DataSize returns the aggregated data size of nodes in the list

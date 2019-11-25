@@ -4,121 +4,95 @@ package eth
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/eth/gasprice"
-	"github.com/ethereum/go-ethereum/miner"
-	"github.com/ethereum/go-ethereum/params"
 )
 
-// MarshalTOML marshals as TOML.
 func (c Config) MarshalTOML() (interface{}, error) {
 	type Config struct {
 		Genesis                 *core.Genesis `toml:",omitempty"`
 		NetworkId               uint64
 		SyncMode                downloader.SyncMode
-		NoPruning               bool
-		NoPrefetch              bool
-		Whitelist               map[uint64]common.Hash `toml:"-"`
-		LightServ               int                    `toml:",omitempty"`
-		LightIngress            int                    `toml:",omitempty"`
-		LightEgress             int                    `toml:",omitempty"`
-		LightPeers              int                    `toml:",omitempty"`
-		UltraLightServers       []string               `toml:",omitempty"`
-		UltraLightFraction      int                    `toml:",omitempty"`
-		UltraLightOnlyAnnounce  bool                   `toml:",omitempty"`
-		SkipBcVersionCheck      bool                   `toml:"-"`
-		DatabaseHandles         int                    `toml:"-"`
+		LightServ               int  `toml:",omitempty"`
+		LightPeers              int  `toml:",omitempty"`
+		MaxPeers                int  `toml:"-"`
+		SkipBcVersionCheck      bool `toml:"-"`
+		DatabaseHandles         int  `toml:"-"`
 		DatabaseCache           int
-		DatabaseFreezer         string
-		TrieCleanCache          int
-		TrieDirtyCache          int
-		TrieTimeout             time.Duration
-		Miner                   miner.Config
-		Ethash                  ethash.Config
+		Etherbase               common.Address `toml:",omitempty"`
+		MinerThreads            int            `toml:",omitempty"`
+		ExtraData               hexutil.Bytes  `toml:",omitempty"`
+		GasPrice                *big.Int
+		EthashCacheDir          string
+		EthashCachesInMem       int
+		EthashCachesOnDisk      int
+		EthashDatasetDir        string
+		EthashDatasetsInMem     int
+		EthashDatasetsOnDisk    int
 		TxPool                  core.TxPoolConfig
 		GPO                     gasprice.Config
 		EnablePreimageRecording bool
-		DocRoot                 string `toml:"-"`
-		EWASMInterpreter        string
-		EVMInterpreter          string
-		RPCGasCap               *big.Int                       `toml:",omitempty"`
-		Checkpoint              *params.TrustedCheckpoint      `toml:",omitempty"`
-		CheckpointOracle        *params.CheckpointOracleConfig `toml:",omitempty"`
+		DocRoot                 string      `toml:"-"`
+		PowMode                 ethash.Mode `toml:"-"`
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
 	enc.NetworkId = c.NetworkId
 	enc.SyncMode = c.SyncMode
-	enc.NoPruning = c.NoPruning
-	enc.NoPrefetch = c.NoPrefetch
-	enc.Whitelist = c.Whitelist
 	enc.LightServ = c.LightServ
-	enc.LightIngress = c.LightIngress
-	enc.LightEgress = c.LightEgress
 	enc.LightPeers = c.LightPeers
-	enc.UltraLightServers = c.UltraLightServers
-	enc.UltraLightFraction = c.UltraLightFraction
-	enc.UltraLightOnlyAnnounce = c.UltraLightOnlyAnnounce
 	enc.SkipBcVersionCheck = c.SkipBcVersionCheck
 	enc.DatabaseHandles = c.DatabaseHandles
 	enc.DatabaseCache = c.DatabaseCache
-	enc.DatabaseFreezer = c.DatabaseFreezer
-	enc.TrieCleanCache = c.TrieCleanCache
-	enc.TrieDirtyCache = c.TrieDirtyCache
-	enc.TrieTimeout = c.TrieTimeout
-	enc.Miner = c.Miner
-	enc.Ethash = c.Ethash
+	enc.Etherbase = c.Etherbase
+	enc.MinerThreads = c.MinerThreads
+	enc.ExtraData = c.ExtraData
+	enc.GasPrice = c.GasPrice
+	enc.EthashCacheDir = c.Ethash.CacheDir
+	enc.EthashCachesInMem = c.Ethash.CachesInMem
+	enc.EthashCachesOnDisk = c.Ethash.CachesOnDisk
+	enc.EthashDatasetDir = c.Ethash.DatasetDir
+	enc.EthashDatasetsInMem = c.Ethash.DatasetsInMem
+	enc.EthashDatasetsOnDisk = c.Ethash.DatasetsOnDisk
 	enc.TxPool = c.TxPool
 	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
 	enc.DocRoot = c.DocRoot
-	enc.EWASMInterpreter = c.EWASMInterpreter
-	enc.EVMInterpreter = c.EVMInterpreter
-	enc.RPCGasCap = c.RPCGasCap
-	enc.Checkpoint = c.Checkpoint
-	enc.CheckpointOracle = c.CheckpointOracle
+	enc.PowMode = c.Ethash.PowMode
 	return &enc, nil
 }
 
-// UnmarshalTOML unmarshals from TOML.
 func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	type Config struct {
 		Genesis                 *core.Genesis `toml:",omitempty"`
 		NetworkId               *uint64
 		SyncMode                *downloader.SyncMode
-		NoPruning               *bool
-		NoPrefetch              *bool
-		Whitelist               map[uint64]common.Hash `toml:"-"`
-		LightServ               *int                   `toml:",omitempty"`
-		LightIngress            *int                   `toml:",omitempty"`
-		LightEgress             *int                   `toml:",omitempty"`
-		LightPeers              *int                   `toml:",omitempty"`
-		UltraLightServers       []string               `toml:",omitempty"`
-		UltraLightFraction      *int                   `toml:",omitempty"`
-		UltraLightOnlyAnnounce  *bool                  `toml:",omitempty"`
-		SkipBcVersionCheck      *bool                  `toml:"-"`
-		DatabaseHandles         *int                   `toml:"-"`
+		LightServ               *int  `toml:",omitempty"`
+		LightPeers              *int  `toml:",omitempty"`
+		MaxPeers                *int  `toml:"-"`
+		SkipBcVersionCheck      *bool `toml:"-"`
+		DatabaseHandles         *int  `toml:"-"`
 		DatabaseCache           *int
-		DatabaseFreezer         *string
-		TrieCleanCache          *int
-		TrieDirtyCache          *int
-		TrieTimeout             *time.Duration
-		Miner                   *miner.Config
-		Ethash                  *ethash.Config
+		Etherbase               *common.Address `toml:",omitempty"`
+		MinerThreads            *int            `toml:",omitempty"`
+		ExtraData               hexutil.Bytes   `toml:",omitempty"`
+		GasPrice                *big.Int
+		EthashCacheDir          *string
+		EthashCachesInMem       *int
+		EthashCachesOnDisk      *int
+		EthashDatasetDir        *string
+		EthashDatasetsInMem     *int
+		EthashDatasetsOnDisk    *int
 		TxPool                  *core.TxPoolConfig
 		GPO                     *gasprice.Config
 		EnablePreimageRecording *bool
-		DocRoot                 *string `toml:"-"`
-		EWASMInterpreter        *string
-		EVMInterpreter          *string
-		RPCGasCap               *big.Int                       `toml:",omitempty"`
-		Checkpoint              *params.TrustedCheckpoint      `toml:",omitempty"`
-		CheckpointOracle        *params.CheckpointOracleConfig `toml:",omitempty"`
+		DocRoot                 *string      `toml:"-"`
+		PowMode                 *ethash.Mode `toml:"-"`
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -133,35 +107,11 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.SyncMode != nil {
 		c.SyncMode = *dec.SyncMode
 	}
-	if dec.NoPruning != nil {
-		c.NoPruning = *dec.NoPruning
-	}
-	if dec.NoPrefetch != nil {
-		c.NoPrefetch = *dec.NoPrefetch
-	}
-	if dec.Whitelist != nil {
-		c.Whitelist = dec.Whitelist
-	}
 	if dec.LightServ != nil {
 		c.LightServ = *dec.LightServ
 	}
-	if dec.LightIngress != nil {
-		c.LightIngress = *dec.LightIngress
-	}
-	if dec.LightEgress != nil {
-		c.LightEgress = *dec.LightEgress
-	}
 	if dec.LightPeers != nil {
 		c.LightPeers = *dec.LightPeers
-	}
-	if dec.UltraLightServers != nil {
-		c.UltraLightServers = dec.UltraLightServers
-	}
-	if dec.UltraLightFraction != nil {
-		c.UltraLightFraction = *dec.UltraLightFraction
-	}
-	if dec.UltraLightOnlyAnnounce != nil {
-		c.UltraLightOnlyAnnounce = *dec.UltraLightOnlyAnnounce
 	}
 	if dec.SkipBcVersionCheck != nil {
 		c.SkipBcVersionCheck = *dec.SkipBcVersionCheck
@@ -172,23 +122,35 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.DatabaseCache != nil {
 		c.DatabaseCache = *dec.DatabaseCache
 	}
-	if dec.DatabaseFreezer != nil {
-		c.DatabaseFreezer = *dec.DatabaseFreezer
+	if dec.Etherbase != nil {
+		c.Etherbase = *dec.Etherbase
 	}
-	if dec.TrieCleanCache != nil {
-		c.TrieCleanCache = *dec.TrieCleanCache
+	if dec.MinerThreads != nil {
+		c.MinerThreads = *dec.MinerThreads
 	}
-	if dec.TrieDirtyCache != nil {
-		c.TrieDirtyCache = *dec.TrieDirtyCache
+	if dec.ExtraData != nil {
+		c.ExtraData = dec.ExtraData
 	}
-	if dec.TrieTimeout != nil {
-		c.TrieTimeout = *dec.TrieTimeout
+	if dec.GasPrice != nil {
+		c.GasPrice = dec.GasPrice
 	}
-	if dec.Miner != nil {
-		c.Miner = *dec.Miner
+	if dec.EthashCacheDir != nil {
+		c.Ethash.CacheDir = *dec.EthashCacheDir
 	}
-	if dec.Ethash != nil {
-		c.Ethash = *dec.Ethash
+	if dec.EthashCachesInMem != nil {
+		c.Ethash.CachesInMem = *dec.EthashCachesInMem
+	}
+	if dec.EthashCachesOnDisk != nil {
+		c.Ethash.CachesOnDisk = *dec.EthashCachesOnDisk
+	}
+	if dec.EthashDatasetDir != nil {
+		c.Ethash.DatasetDir = *dec.EthashDatasetDir
+	}
+	if dec.EthashDatasetsInMem != nil {
+		c.Ethash.DatasetsInMem = *dec.EthashDatasetsInMem
+	}
+	if dec.EthashDatasetsOnDisk != nil {
+		c.Ethash.DatasetsOnDisk = *dec.EthashDatasetsOnDisk
 	}
 	if dec.TxPool != nil {
 		c.TxPool = *dec.TxPool
@@ -202,20 +164,8 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.DocRoot != nil {
 		c.DocRoot = *dec.DocRoot
 	}
-	if dec.EWASMInterpreter != nil {
-		c.EWASMInterpreter = *dec.EWASMInterpreter
-	}
-	if dec.EVMInterpreter != nil {
-		c.EVMInterpreter = *dec.EVMInterpreter
-	}
-	if dec.RPCGasCap != nil {
-		c.RPCGasCap = dec.RPCGasCap
-	}
-	if dec.Checkpoint != nil {
-		c.Checkpoint = dec.Checkpoint
-	}
-	if dec.CheckpointOracle != nil {
-		c.CheckpointOracle = dec.CheckpointOracle
+	if dec.PowMode != nil {
+		c.Ethash.PowMode = *dec.PowMode
 	}
 	return nil
 }

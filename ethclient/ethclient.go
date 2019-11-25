@@ -39,11 +39,7 @@ type Client struct {
 
 // Dial connects a client to the given URL.
 func Dial(rawurl string) (*Client, error) {
-	return DialContext(context.Background(), rawurl)
-}
-
-func DialContext(ctx context.Context, rawurl string) (*Client, error) {
-	c, err := rpc.DialContext(ctx, rawurl)
+	c, err := rpc.Dial(rawurl)
 	if err != nil {
 		return nil, err
 	}
@@ -55,21 +51,7 @@ func NewClient(c *rpc.Client) *Client {
 	return &Client{c}
 }
 
-func (ec *Client) Close() {
-	ec.c.Close()
-}
-
 // Blockchain Access
-
-// ChainId retrieves the current chain ID for transaction replay protection.
-func (ec *Client) ChainID(ctx context.Context) (*big.Int, error) {
-	var result hexutil.Big
-	err := ec.c.CallContext(ctx, &result, "eth_chainId")
-	if err != nil {
-		return nil, err
-	}
-	return (*big.Int)(&result), err
-}
 
 // BlockByHash returns the given full block.
 //
@@ -151,9 +133,7 @@ func (ec *Client) getBlock(ctx context.Context, method string, args ...interface
 	// Fill the sender cache of transactions in the block.
 	txs := make([]*types.Transaction, len(body.Transactions))
 	for i, tx := range body.Transactions {
-		if tx.From != nil {
-			setSenderFromServer(tx.tx, *tx.From, body.Hash)
-		}
+		setSenderFromServer(tx.tx, tx.From, body.Hash)
 		txs[i] = tx.tx
 	}
 	return types.NewBlockWithHeader(head).WithBody(txs, uncles), nil
@@ -186,9 +166,9 @@ type rpcTransaction struct {
 }
 
 type txExtraInfo struct {
-	BlockNumber *string         `json:"blockNumber,omitempty"`
-	BlockHash   *common.Hash    `json:"blockHash,omitempty"`
-	From        *common.Address `json:"from,omitempty"`
+	BlockNumber *string
+	BlockHash   common.Hash
+	From        common.Address
 }
 
 func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
@@ -209,9 +189,7 @@ func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *
 	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
 		return nil, false, fmt.Errorf("server returned transaction without signature")
 	}
-	if json.From != nil && json.BlockHash != nil {
-		setSenderFromServer(json.tx, *json.From, *json.BlockHash)
-	}
+	setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, json.BlockNumber == nil, nil
 }
 
@@ -251,17 +229,14 @@ func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (
 func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*types.Transaction, error) {
 	var json *rpcTransaction
 	err := ec.c.CallContext(ctx, &json, "eth_getTransactionByBlockHashAndIndex", blockHash, hexutil.Uint64(index))
-	if err != nil {
-		return nil, err
+	if err == nil {
+		if json == nil {
+			return nil, ethereum.NotFound
+		} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+			return nil, fmt.Errorf("server returned transaction without signature")
+		}
 	}
-	if json == nil {
-		return nil, ethereum.NotFound
-	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
-		return nil, fmt.Errorf("server returned transaction without signature")
-	}
-	if json.From != nil && json.BlockHash != nil {
-		setSenderFromServer(json.tx, *json.From, *json.BlockHash)
-	}
+	setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, err
 }
 
@@ -321,7 +296,7 @@ func (ec *Client) SyncProgress(ctx context.Context) (*ethereum.SyncProgress, err
 // SubscribeNewHead subscribes to notifications about the current blockchain head
 // on the given channel.
 func (ec *Client) SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (ethereum.Subscription, error) {
-	return ec.c.EthSubscribe(ctx, ch, "newHeads")
+	return ec.c.EthSubscribe(ctx, ch, "newHeads", map[string]struct{}{})
 }
 
 // State Access
@@ -376,42 +351,26 @@ func (ec *Client) NonceAt(ctx context.Context, account common.Address, blockNumb
 // FilterLogs executes a filter query.
 func (ec *Client) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
 	var result []types.Log
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	err = ec.c.CallContext(ctx, &result, "eth_getLogs", arg)
+	err := ec.c.CallContext(ctx, &result, "eth_getLogs", toFilterArg(q))
 	return result, err
 }
 
 // SubscribeFilterLogs subscribes to the results of a streaming filter query.
 func (ec *Client) SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	return ec.c.EthSubscribe(ctx, ch, "logs", arg)
+	return ec.c.EthSubscribe(ctx, ch, "logs", toFilterArg(q))
 }
 
-func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
+func toFilterArg(q ethereum.FilterQuery) interface{} {
 	arg := map[string]interface{}{
-		"address": q.Addresses,
-		"topics":  q.Topics,
+		"fromBlock": toBlockNumArg(q.FromBlock),
+		"toBlock":   toBlockNumArg(q.ToBlock),
+		"address":   q.Addresses,
+		"topics":    q.Topics,
 	}
-	if q.BlockHash != nil {
-		arg["blockHash"] = *q.BlockHash
-		if q.FromBlock != nil || q.ToBlock != nil {
-			return nil, fmt.Errorf("cannot specify both BlockHash and FromBlock/ToBlock")
-		}
-	} else {
-		if q.FromBlock == nil {
-			arg["fromBlock"] = "0x0"
-		} else {
-			arg["fromBlock"] = toBlockNumArg(q.FromBlock)
-		}
-		arg["toBlock"] = toBlockNumArg(q.ToBlock)
+	if q.FromBlock == nil {
+		arg["fromBlock"] = "0x0"
 	}
-	return arg, nil
+	return arg
 }
 
 // Pending State
@@ -496,13 +455,13 @@ func (ec *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 // the current pending state of the backend blockchain. There is no guarantee that this is
 // the true gas limit requirement as other transactions may be added or removed by miners,
 // but it should provide a basis for setting a reasonable default.
-func (ec *Client) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-	var hex hexutil.Uint64
+func (ec *Client) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (*big.Int, error) {
+	var hex hexutil.Big
 	err := ec.c.CallContext(ctx, &hex, "eth_estimateGas", toCallArg(msg))
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return uint64(hex), nil
+	return (*big.Int)(&hex), nil
 }
 
 // SendTransaction injects a signed transaction into the pending pool for execution.
@@ -514,7 +473,7 @@ func (ec *Client) SendTransaction(ctx context.Context, tx *types.Transaction) er
 	if err != nil {
 		return err
 	}
-	return ec.c.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
+	return ec.c.CallContext(ctx, nil, "eth_sendRawTransaction", common.ToHex(data))
 }
 
 func toCallArg(msg ethereum.CallMsg) interface{} {
@@ -528,8 +487,8 @@ func toCallArg(msg ethereum.CallMsg) interface{} {
 	if msg.Value != nil {
 		arg["value"] = (*hexutil.Big)(msg.Value)
 	}
-	if msg.Gas != 0 {
-		arg["gas"] = hexutil.Uint64(msg.Gas)
+	if msg.Gas != nil {
+		arg["gas"] = (*hexutil.Big)(msg.Gas)
 	}
 	if msg.GasPrice != nil {
 		arg["gasPrice"] = (*hexutil.Big)(msg.GasPrice)

@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+//
 
 package tests
 
@@ -30,18 +31,18 @@ import (
 //go:generate gencodec -type DifficultyTest -field-override difficultyTestMarshaling -out gen_difficultytest.go
 
 type DifficultyTest struct {
-	ParentTimestamp    uint64      `json:"parentTimestamp"`
+	ParentTimestamp    *big.Int    `json:"parentTimestamp"`
 	ParentDifficulty   *big.Int    `json:"parentDifficulty"`
 	UncleHash          common.Hash `json:"parentUncles"`
-	CurrentTimestamp   uint64      `json:"currentTimestamp"`
+	CurrentTimestamp   *big.Int    `json:"currentTimestamp"`
 	CurrentBlockNumber uint64      `json:"currentBlockNumber"`
 	CurrentDifficulty  *big.Int    `json:"currentDifficulty"`
 }
 
 type difficultyTestMarshaling struct {
-	ParentTimestamp    math.HexOrDecimal64
+	ParentTimestamp    *math.HexOrDecimal256
 	ParentDifficulty   *math.HexOrDecimal256
-	CurrentTimestamp   math.HexOrDecimal64
+	CurrentTimestamp   *math.HexOrDecimal256
 	CurrentDifficulty  *math.HexOrDecimal256
 	UncleHash          common.Hash
 	CurrentBlockNumber math.HexOrDecimal64
@@ -56,7 +57,7 @@ func (test *DifficultyTest) Run(config *params.ChainConfig) error {
 		UncleHash:  test.UncleHash,
 	}
 
-	actual := ethash.CalcDifficulty(config, test.CurrentTimestamp, parent)
+	actual := ethash.CalcDifficulty(config, test.CurrentTimestamp.Uint64(), parent)
 	exp := test.CurrentDifficulty
 
 	if actual.Cmp(exp) != 0 {

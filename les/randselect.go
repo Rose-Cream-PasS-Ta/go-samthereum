@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
+// Package les implements the Light Ethereum Subprotocol.
 package les
 
 import (
@@ -117,16 +118,17 @@ func (n *wrsNode) insert(item wrsItem, weight int64) int {
 	if n.level == 0 {
 		n.items[branch] = item
 		return branch
-	}
-	var subNode *wrsNode
-	if n.items[branch] == nil {
-		subNode = &wrsNode{maxItems: n.maxItems / wrsBranches, level: n.level - 1}
-		n.items[branch] = subNode
 	} else {
-		subNode = n.items[branch].(*wrsNode)
+		var subNode *wrsNode
+		if n.items[branch] == nil {
+			subNode = &wrsNode{maxItems: n.maxItems / wrsBranches, level: n.level - 1}
+			n.items[branch] = subNode
+		} else {
+			subNode = n.items[branch].(*wrsNode)
+		}
+		subIdx := subNode.insert(item, weight)
+		return subNode.maxItems*branch + subIdx
 	}
-	subIdx := subNode.insert(item, weight)
-	return subNode.maxItems*branch + subIdx
 }
 
 // setWeight updates the weight of a certain item (which should exist) and returns
@@ -160,10 +162,12 @@ func (n *wrsNode) choose(val int64) (wrsItem, int64) {
 		if val < w {
 			if n.level == 0 {
 				return n.items[i].(wrsItem), n.weights[i]
+			} else {
+				return n.items[i].(*wrsNode).choose(val)
 			}
-			return n.items[i].(*wrsNode).choose(val)
+		} else {
+			val -= w
 		}
-		val -= w
 	}
 	panic(nil)
 }

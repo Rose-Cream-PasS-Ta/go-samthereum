@@ -18,14 +18,12 @@ package light
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/trie"
 )
 
@@ -67,7 +65,7 @@ func (db *odrDatabase) CopyTrie(t state.Trie) state.Trie {
 }
 
 func (db *odrDatabase) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
-	if codeHash == sha3Nil {
+	if codeHash == sha3_nil {
 		return nil, nil
 	}
 	if code, err := db.backend.Database().Get(codeHash[:]); err == nil {
@@ -83,10 +81,6 @@ func (db *odrDatabase) ContractCode(addrHash, codeHash common.Hash) ([]byte, err
 func (db *odrDatabase) ContractCodeSize(addrHash, codeHash common.Hash) (int, error) {
 	code, err := db.ContractCode(addrHash, codeHash)
 	return len(code), err
-}
-
-func (db *odrDatabase) TrieDB() *trie.Database {
-	return nil
 }
 
 type odrTrie struct {
@@ -108,7 +102,7 @@ func (t *odrTrie) TryGet(key []byte) ([]byte, error) {
 func (t *odrTrie) TryUpdate(key, value []byte) error {
 	key = crypto.Keccak256(key)
 	return t.do(key, func() error {
-		return t.trie.TryUpdate(key, value)
+		return t.trie.TryDelete(key)
 	})
 }
 
@@ -119,11 +113,11 @@ func (t *odrTrie) TryDelete(key []byte) error {
 	})
 }
 
-func (t *odrTrie) Commit(onleaf trie.LeafCallback) (common.Hash, error) {
+func (t *odrTrie) CommitTo(db trie.DatabaseWriter) (common.Hash, error) {
 	if t.trie == nil {
 		return t.id.Root, nil
 	}
-	return t.trie.Commit(onleaf)
+	return t.trie.CommitTo(db)
 }
 
 func (t *odrTrie) Hash() common.Hash {
@@ -141,17 +135,13 @@ func (t *odrTrie) GetKey(sha []byte) []byte {
 	return nil
 }
 
-func (t *odrTrie) Prove(key []byte, fromLevel uint, proofDb ethdb.KeyValueWriter) error {
-	return errors.New("not implemented, needs client/server interface split")
-}
-
 // do tries and retries to execute a function until it returns with no error or
 // an error type other than MissingNodeError
 func (t *odrTrie) do(key []byte, fn func() error) error {
 	for {
 		var err error
 		if t.trie == nil {
-			t.trie, err = trie.New(t.id.Root, trie.NewDatabase(t.db.backend.Database()))
+			t.trie, err = trie.New(t.id.Root, t.db.backend.Database())
 		}
 		if err == nil {
 			err = fn()
@@ -161,7 +151,7 @@ func (t *odrTrie) do(key []byte, fn func() error) error {
 		}
 		r := &TrieRequest{Id: t.id, Key: key}
 		if err := t.db.backend.Retrieve(t.db.ctx, r); err != nil {
-			return err
+			return fmt.Errorf("can't fetch trie key %x: %v", key, err)
 		}
 	}
 }
@@ -177,7 +167,7 @@ func newNodeIterator(t *odrTrie, startkey []byte) trie.NodeIterator {
 	// Open the actual non-ODR trie if that hasn't happened yet.
 	if t.trie == nil {
 		it.do(func() error {
-			t, err := trie.New(t.id.Root, trie.NewDatabase(t.db.backend.Database()))
+			t, err := trie.New(t.id.Root, t.db.backend.Database())
 			if err == nil {
 				it.t.trie = t
 			}

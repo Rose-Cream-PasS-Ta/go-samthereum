@@ -16,33 +16,30 @@
 
 // Contains all the wrappers from the bind package.
 
-package geth
+package g3th
 
 import (
-	"errors"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Signer is an interface defining the callback when a contract requires a
+// Signer is an interaface defining the callback when a contract requires a
 // method to sign the transaction before submission.
 type Signer interface {
 	Sign(*Address, *Transaction) (tx *Transaction, _ error)
 }
 
-type MobileSigner struct {
+type signer struct {
 	sign bind.SignerFn
 }
 
-func (s *MobileSigner) Sign(addr *Address, unsignedTx *Transaction) (signedTx *Transaction, _ error) {
-	sig, err := s.sign(types.EIP155Signer{}, addr.address, unsignedTx.tx)
+func (s *signer) Sign(addr *Address, unsignedTx *Transaction) (signedTx *Transaction, _ error) {
+	sig, err := s.sign(types.HomesteadSigner{}, addr.address, unsignedTx.tx)
 	if err != nil {
 		return nil, err
 	}
@@ -76,40 +73,11 @@ type TransactOpts struct {
 	opts bind.TransactOpts
 }
 
-// NewTransactOpts creates a new option set for contract transaction.
-func NewTransactOpts() *TransactOpts {
-	return new(TransactOpts)
-}
-
-// NewKeyedTransactor is a utility method to easily create a transaction signer
-// from a single private key.
-func NewKeyedTransactOpts(keyJson []byte, passphrase string) (*TransactOpts, error) {
-	key, err := keystore.DecryptKey(keyJson, passphrase)
-	if err != nil {
-		return nil, err
-	}
-	keyAddr := crypto.PubkeyToAddress(key.PrivateKey.PublicKey)
-	opts := bind.TransactOpts{
-		From: keyAddr,
-		Signer: func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-			if address != keyAddr {
-				return nil, errors.New("not authorized to sign this account")
-			}
-			signature, err := crypto.Sign(signer.Hash(tx).Bytes(), key.PrivateKey)
-			if err != nil {
-				return nil, err
-			}
-			return tx.WithSignature(signer, signature)
-		},
-	}
-	return &TransactOpts{opts}, nil
-}
-
 func (opts *TransactOpts) GetFrom() *Address    { return &Address{opts.opts.From} }
 func (opts *TransactOpts) GetNonce() int64      { return opts.opts.Nonce.Int64() }
 func (opts *TransactOpts) GetValue() *BigInt    { return &BigInt{opts.opts.Value} }
 func (opts *TransactOpts) GetGasPrice() *BigInt { return &BigInt{opts.opts.GasPrice} }
-func (opts *TransactOpts) GetGasLimit() int64   { return int64(opts.opts.GasLimit) }
+func (opts *TransactOpts) GetGasLimit() int64   { return opts.opts.GasLimit.Int64() }
 
 // GetSigner cannot be reliably implemented without identity preservation (https://github.com/golang/go/issues/16876)
 // func (opts *TransactOpts) GetSigner() Signer { return &signer{opts.opts.Signer} }
@@ -131,7 +99,7 @@ func (opts *TransactOpts) SetSigner(s Signer) {
 }
 func (opts *TransactOpts) SetValue(value *BigInt)      { opts.opts.Value = value.bigint }
 func (opts *TransactOpts) SetGasPrice(price *BigInt)   { opts.opts.GasPrice = price.bigint }
-func (opts *TransactOpts) SetGasLimit(limit int64)     { opts.opts.GasLimit = uint64(limit) }
+func (opts *TransactOpts) SetGasLimit(limit int64)     { opts.opts.GasLimit = big.NewInt(limit) }
 func (opts *TransactOpts) SetContext(context *Context) { opts.opts.Context = context.context }
 
 // BoundContract is the base wrapper object that reflects a contract on the
@@ -170,7 +138,7 @@ func BindContract(address *Address, abiJSON string, client *EthereumClient) (con
 		return nil, err
 	}
 	return &BoundContract{
-		contract: bind.NewBoundContract(address.address, parsed, client.client, client.client, client.client),
+		contract: bind.NewBoundContract(address.address, parsed, client.client, client.client),
 		address:  address.address,
 	}, nil
 }
@@ -186,20 +154,12 @@ func (c *BoundContract) GetDeployer() *Transaction {
 // Call invokes the (constant) contract method with params as input values and
 // sets the output to result.
 func (c *BoundContract) Call(opts *CallOpts, out *Interfaces, method string, args *Interfaces) error {
-	if len(out.objects) == 1 {
-		result := out.objects[0]
-		if err := c.contract.Call(&opts.opts, result, method, args.objects...); err != nil {
-			return err
-		}
-		out.objects[0] = result
-	} else {
-		results := make([]interface{}, len(out.objects))
-		copy(results, out.objects)
-		if err := c.contract.Call(&opts.opts, &results, method, args.objects...); err != nil {
-			return err
-		}
-		copy(out.objects, results)
+	results := make([]interface{}, len(out.objects))
+	copy(results, out.objects)
+	if err := c.contract.Call(&opts.opts, &results, method, args.objects...); err != nil {
+		return err
 	}
+	copy(out.objects, results)
 	return nil
 }
 

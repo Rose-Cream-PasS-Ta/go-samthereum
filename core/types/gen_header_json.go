@@ -11,9 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-var _ = (*headerMarshaling)(nil)
-
-// MarshalJSON marshals as JSON.
 func (h Header) MarshalJSON() ([]byte, error) {
 	type Header struct {
 		ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
@@ -25,12 +22,12 @@ func (h Header) MarshalJSON() ([]byte, error) {
 		Bloom       Bloom          `json:"logsBloom"        gencodec:"required"`
 		Difficulty  *hexutil.Big   `json:"difficulty"       gencodec:"required"`
 		Number      *hexutil.Big   `json:"number"           gencodec:"required"`
-		GasLimit    hexutil.Uint64 `json:"gasLimit"         gencodec:"required"`
-		GasUsed     hexutil.Uint64 `json:"gasUsed"          gencodec:"required"`
-		Time        hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
+		GasLimit    *hexutil.Big   `json:"gasLimit"         gencodec:"required"`
+		GasUsed     *hexutil.Big   `json:"gasUsed"          gencodec:"required"`
+		Time        *hexutil.Big   `json:"timestamp"        gencodec:"required"`
 		Extra       hexutil.Bytes  `json:"extraData"        gencodec:"required"`
-		MixDigest   common.Hash    `json:"mixHash"`
-		Nonce       BlockNonce     `json:"nonce"`
+		MixDigest   common.Hash    `json:"mixHash"          gencodec:"required"`
+		Nonce       BlockNonce     `json:"nonce"            gencodec:"required"`
 		Hash        common.Hash    `json:"hash"`
 	}
 	var enc Header
@@ -43,9 +40,9 @@ func (h Header) MarshalJSON() ([]byte, error) {
 	enc.Bloom = h.Bloom
 	enc.Difficulty = (*hexutil.Big)(h.Difficulty)
 	enc.Number = (*hexutil.Big)(h.Number)
-	enc.GasLimit = hexutil.Uint64(h.GasLimit)
-	enc.GasUsed = hexutil.Uint64(h.GasUsed)
-	enc.Time = hexutil.Uint64(h.Time)
+	enc.GasLimit = (*hexutil.Big)(h.GasLimit)
+	enc.GasUsed = (*hexutil.Big)(h.GasUsed)
+	enc.Time = (*hexutil.Big)(h.Time)
 	enc.Extra = h.Extra
 	enc.MixDigest = h.MixDigest
 	enc.Nonce = h.Nonce
@@ -53,7 +50,6 @@ func (h Header) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&enc)
 }
 
-// UnmarshalJSON unmarshals from JSON.
 func (h *Header) UnmarshalJSON(input []byte) error {
 	type Header struct {
 		ParentHash  *common.Hash    `json:"parentHash"       gencodec:"required"`
@@ -65,12 +61,12 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 		Bloom       *Bloom          `json:"logsBloom"        gencodec:"required"`
 		Difficulty  *hexutil.Big    `json:"difficulty"       gencodec:"required"`
 		Number      *hexutil.Big    `json:"number"           gencodec:"required"`
-		GasLimit    *hexutil.Uint64 `json:"gasLimit"         gencodec:"required"`
-		GasUsed     *hexutil.Uint64 `json:"gasUsed"          gencodec:"required"`
-		Time        *hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
-		Extra       *hexutil.Bytes  `json:"extraData"        gencodec:"required"`
-		MixDigest   *common.Hash    `json:"mixHash"`
-		Nonce       *BlockNonce     `json:"nonce"`
+		GasLimit    *hexutil.Big    `json:"gasLimit"         gencodec:"required"`
+		GasUsed     *hexutil.Big    `json:"gasUsed"          gencodec:"required"`
+		Time        *hexutil.Big    `json:"timestamp"        gencodec:"required"`
+		Extra       hexutil.Bytes   `json:"extraData"        gencodec:"required"`
+		MixDigest   *common.Hash    `json:"mixHash"          gencodec:"required"`
+		Nonce       *BlockNonce     `json:"nonce"            gencodec:"required"`
 	}
 	var dec Header
 	if err := json.Unmarshal(input, &dec); err != nil {
@@ -115,24 +111,26 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 	if dec.GasLimit == nil {
 		return errors.New("missing required field 'gasLimit' for Header")
 	}
-	h.GasLimit = uint64(*dec.GasLimit)
+	h.GasLimit = (*big.Int)(dec.GasLimit)
 	if dec.GasUsed == nil {
 		return errors.New("missing required field 'gasUsed' for Header")
 	}
-	h.GasUsed = uint64(*dec.GasUsed)
+	h.GasUsed = (*big.Int)(dec.GasUsed)
 	if dec.Time == nil {
 		return errors.New("missing required field 'timestamp' for Header")
 	}
-	h.Time = uint64(*dec.Time)
+	h.Time = (*big.Int)(dec.Time)
 	if dec.Extra == nil {
 		return errors.New("missing required field 'extraData' for Header")
 	}
-	h.Extra = *dec.Extra
-	if dec.MixDigest != nil {
-		h.MixDigest = *dec.MixDigest
+	h.Extra = dec.Extra
+	if dec.MixDigest == nil {
+		return errors.New("missing required field 'mixHash' for Header")
 	}
-	if dec.Nonce != nil {
-		h.Nonce = *dec.Nonce
+	h.MixDigest = *dec.MixDigest
+	if dec.Nonce == nil {
+		return errors.New("missing required field 'nonce' for Header")
 	}
+	h.Nonce = *dec.Nonce
 	return nil
 }

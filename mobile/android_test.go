@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package geth
+package g3th
 
 import (
 	"io/ioutil"
@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cespare/cp"
+	"github.com/ethereum/go-ethereum/internal/build"
 )
 
 // androidTestClass is a Java class to do some lightweight tests against the Android
@@ -40,14 +40,14 @@ import android.test.MoreAsserts;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import org.ethereum.geth.*;
+import org.samthereum.g3th.*;
 
 public class AndroidTest extends InstrumentationTestCase {
 	public AndroidTest() {}
 
 	public void testAccountManagement() {
 		// Create an encrypted keystore with light crypto parameters.
-		KeyStore ks = new KeyStore(getInstrumentation().getContext().getFilesDir() + "/keystore", Geth.LightScryptN, Geth.LightScryptP);
+		KeyStore ks = new KeyStore(getInstrumentation().getContext().getFilesDir() + "/keystore", GMC.LightScryptN, GMC.LightScryptP);
 
 		try {
 			// Create a new account with the specified encryption passphrase.
@@ -72,7 +72,7 @@ public class AndroidTest extends InstrumentationTestCase {
 
 			Transaction tx = new Transaction(
 				1, new Address("0x0000000000000000000000000000000000000000"),
-				new BigInt(0), 0, new BigInt(1), null); // Random empty transaction
+				new BigInt(0), new BigInt(0), new BigInt(1), null); // Random empty transaction
 			BigInt chain = new BigInt(1); // Chain identifier of the main net
 
 			// Sign a transaction with a single authorization
@@ -96,7 +96,7 @@ public class AndroidTest extends InstrumentationTestCase {
 
 		try {
 			// Start up a new inprocess node
-			Node node = new Node(getInstrumentation().getContext().getFilesDir() + "/.ethereum", new NodeConfig());
+			Node node = new Node(getInstrumentation().getContext().getFilesDir() + "/.samthereum", new NodeConfig());
 			node.start();
 
 			// Retrieve some data via function calls (we don't really care about the results)
@@ -164,17 +164,12 @@ func TestAndroid(t *testing.T) {
 		t.Skip("command gradle not found, skipping")
 	}
 	if sdk := os.Getenv("ANDROID_HOME"); sdk == "" {
-		// Android SDK not explicitly given, try to auto-resolve
-		autopath := filepath.Join(os.Getenv("HOME"), "Android", "Sdk")
-		if _, err := os.Stat(autopath); err != nil {
-			t.Skip("ANDROID_HOME environment var not set, skipping")
-		}
-		os.Setenv("ANDROID_HOME", autopath)
+		t.Skip("ANDROID_HOME environment var not set, skipping")
 	}
 	if _, err := exec.Command("which", "gomobile").CombinedOutput(); err != nil {
 		t.Log("gomobile missing, installing it...")
-		if out, err := exec.Command("go", "get", "golang.org/x/mobile/cmd/gomobile").CombinedOutput(); err != nil {
-			t.Fatalf("install failed: %v\n%s", err, string(out))
+		if _, err := exec.Command("go", "install", "golang.org/x/mobile/cmd/gomobile").CombinedOutput(); err != nil {
+			t.Fatalf("install failed: %v", err)
 		}
 		t.Log("initializing gomobile...")
 		start := time.Now()
@@ -184,7 +179,7 @@ func TestAndroid(t *testing.T) {
 		t.Logf("initialization took %v", time.Since(start))
 	}
 	// Create and switch to a temporary workspace
-	workspace, err := ioutil.TempDir("", "geth-android-")
+	workspace, err := ioutil.TempDir("", "g3th-android-")
 	if err != nil {
 		t.Fatalf("failed to create temporary workspace: %v", err)
 	}
@@ -200,21 +195,21 @@ func TestAndroid(t *testing.T) {
 	defer os.Chdir(pwd)
 
 	// Create the skeleton of the Android project
-	for _, dir := range []string{"src/main", "src/androidTest/java/org/ethereum/gethtest", "libs"} {
+	for _, dir := range []string{"src/main", "src/androidTest/java/org/samthereum/g3thtest", "libs"} {
 		err = os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	// Generate the mobile bindings for Geth and add the tester class
-	gobind := exec.Command("gomobile", "bind", "-javapkg", "org.ethereum", "github.com/ethereum/go-ethereum/mobile")
+	// Generate the mobile bindings for GMC and add the tester class
+	gobind := exec.Command("gomobile", "bind", "-javapkg", "org.samthereum", "github.com/ethereum/go-ethereum/mobile")
 	if output, err := gobind.CombinedOutput(); err != nil {
 		t.Logf("%s", output)
 		t.Fatalf("failed to run gomobile bind: %v", err)
 	}
-	cp.CopyFile(filepath.Join("libs", "geth.aar"), "geth.aar")
+	build.CopyFile(filepath.Join("libs", "g3th.aar"), "g3th.aar", os.ModePerm)
 
-	if err = ioutil.WriteFile(filepath.Join("src", "androidTest", "java", "org", "ethereum", "gethtest", "AndroidTest.java"), []byte(androidTestClass), os.ModePerm); err != nil {
+	if err = ioutil.WriteFile(filepath.Join("src", "androidTest", "java", "org", "samthereum", "g3thtest", "AndroidTest.java"), []byte(androidTestClass), os.ModePerm); err != nil {
 		t.Fatalf("failed to write Android test class: %v", err)
 	}
 	// Finish creating the project and run the tests via gradle
@@ -232,7 +227,7 @@ func TestAndroid(t *testing.T) {
 
 const androidManifest = `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="org.ethereum.gethtest"
+          package="org.samthereum.g3thtest"
 	  android:versionCode="1"
 	  android:versionName="1.0">
 
@@ -244,7 +239,7 @@ const gradleConfig = `buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:1.5.0'
     }
 }
 allprojects {
@@ -261,6 +256,6 @@ repositories {
 }
 dependencies {
     compile 'com.android.support:appcompat-v7:19.0.0'
-    compile(name: "geth", ext: "aar")
+    compile(name: "g3th", ext: "aar")
 }
 `
