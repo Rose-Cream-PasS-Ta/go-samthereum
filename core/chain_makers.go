@@ -292,7 +292,7 @@ func (cr *fakeChainReader) Config() *params.ChainConfig {
 }
 
 func (cr *fakeChainReader) CurrentHeader() *types.Header                            { return nil }
-func (cr *fakeChainReader) g3theaderByNumber(number uint64) *types.Header           { return nil }
-func (cr *fakeChainReader) g3theaderByHash(hash common.Hash) *types.Header          { return nil }
-func (cr *fakeChainReader) g3theader(hash common.Hash, number uint64) *types.Header { return nil }
+func (cr *fakeChainReader) getheaderByNumber(number uint64) *types.Header           { return nil }
+func (cr *fakeChainReader) getheaderByHash(hash common.Hash) *types.Header          { return nil }
+func (cr *fakeChainReader) getheader(hash common.Hash, number uint64) *types.Header { return nil }
 func (cr *fakeChainReader) GetBlock(hash common.Hash, number uint64) *types.Block   { return nil }

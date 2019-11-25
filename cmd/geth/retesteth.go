@@ -624,16 +624,16 @@ func (api *RetestethAPI) AccountRange(ctx context.Context,
 	)
 	if (*big.Int)(blockHashOrNumber).Cmp(big.NewInt(math.MaxInt64)) > 0 {
 		blockHash := common.BigToHash((*big.Int)(blockHashOrNumber))
-		header = api.blockchain.g3theaderByHash(blockHash)
+		header = api.blockchain.getheaderByHash(blockHash)
 		block = api.blockchain.GetBlockByHash(blockHash)
 		//fmt.Printf("Account range: %x, txIndex %d, start: %x, maxResults: %d\n", blockHash, txIndex, common.BigToHash((*big.Int)(addressHash)), maxResults)
 	} else {
 		blockNumber := (*big.Int)(blockHashOrNumber).Uint64()
-		header = api.blockchain.g3theaderByNumber(blockNumber)
+		header = api.blockchain.getheaderByNumber(blockNumber)
 		block = api.blockchain.GetBlockByNumber(blockNumber)
 		//fmt.Printf("Account range: %d, txIndex %d, start: %x, maxResults: %d\n", blockNumber, txIndex, common.BigToHash((*big.Int)(addressHash)), maxResults)
 	}
-	parentHeader := api.blockchain.g3theaderByHash(header.ParentHash)
+	parentHeader := api.blockchain.getheaderByHash(header.ParentHash)
 	var root common.Hash
 	var statedb *state.StateDB
 	var err error
@@ -698,7 +698,7 @@ func (api *RetestethAPI) AccountRange(ctx context.Context,
 
 func (api *RetestethAPI) GetBalance(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (*math.HexOrDecimal256, error) {
 	//fmt.Printf("GetBalance %x, block %d\n", address, blockNr)
-	header := api.blockchain.g3theaderByNumber(uint64(blockNr))
+	header := api.blockchain.getheaderByNumber(uint64(blockNr))
 	statedb, err := api.blockchain.StateAt(header.Root)
 	if err != nil {
 		return nil, err
@@ -707,7 +707,7 @@ func (api *RetestethAPI) GetBalance(ctx context.Context, address common.Address,
 }
 
 func (api *RetestethAPI) GetCode(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (hexutil.Bytes, error) {
-	header := api.blockchain.g3theaderByNumber(uint64(blockNr))
+	header := api.blockchain.getheaderByNumber(uint64(blockNr))
 	statedb, err := api.blockchain.StateAt(header.Root)
 	if err != nil {
 		return nil, err
@@ -716,7 +716,7 @@ func (api *RetestethAPI) GetCode(ctx context.Context, address common.Address, bl
 }
 
 func (api *RetestethAPI) GetTransactionCount(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (uint64, error) {
-	header := api.blockchain.g3theaderByNumber(uint64(blockNr))
+	header := api.blockchain.getheaderByNumber(uint64(blockNr))
 	statedb, err := api.blockchain.StateAt(header.Root)
 	if err != nil {
 		return 0, err
@@ -735,18 +735,18 @@ func (api *RetestethAPI) StorageRangeAt(ctx context.Context,
 	)
 	if (*big.Int)(blockHashOrNumber).Cmp(big.NewInt(math.MaxInt64)) > 0 {
 		blockHash := common.BigToHash((*big.Int)(blockHashOrNumber))
-		header = api.blockchain.g3theaderByHash(blockHash)
+		header = api.blockchain.getheaderByHash(blockHash)
 		block = api.blockchain.GetBlockByHash(blockHash)
 		//fmt.Printf("Storage range: %x, txIndex %d, addr: %x, start: %x, maxResults: %d\n",
 		//	blockHash, txIndex, address, common.BigToHash((*big.Int)(begin)), maxResults)
 	} else {
 		blockNumber := (*big.Int)(blockHashOrNumber).Uint64()
-		header = api.blockchain.g3theaderByNumber(blockNumber)
+		header = api.blockchain.getheaderByNumber(blockNumber)
 		block = api.blockchain.GetBlockByNumber(blockNumber)
 		//fmt.Printf("Storage range: %d, txIndex %d, addr: %x, start: %x, maxResults: %d\n",
 		//	blockNumber, txIndex, address, common.BigToHash((*big.Int)(begin)), maxResults)
 	}
-	parentHeader := api.blockchain.g3theaderByHash(header.ParentHash)
+	parentHeader := api.blockchain.getheaderByHash(header.ParentHash)
 	var root common.Hash
 	var statedb *state.StateDB
 	var err error

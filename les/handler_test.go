@@ -163,7 +163,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		// Collect the headers to expect in the response
 		var headers []*types.Header
 		for _, hash := range tt.expect {
-			headers = append(headers, bc.g3theaderByHash(hash))
+			headers = append(headers, bc.getheaderByHash(hash))
 		}
 		// Send the hash request and verify the response
 		reqID++
@@ -267,7 +267,7 @@ func testGetCode(t *testing.T, protocol int) {
 	var codereqs []*CodeReq
 	var codes [][]byte
 	for i := uint64(0); i <= bc.CurrentBlock().NumberU64(); i++ {
-		header := bc.g3theaderByNumber(i)
+		header := bc.getheaderByNumber(i)
 		req := &CodeReq{
 			BHash:  header.Hash(),
 			AccKey: crypto.Keccak256(testContractAddr[:]),
@@ -296,7 +296,7 @@ func testGetStaleCode(t *testing.T, protocol int) {
 
 	check := func(number uint64, expected [][]byte) {
 		req := &CodeReq{
-			BHash:  bc.g3theaderByNumber(number).Hash(),
+			BHash:  bc.getheaderByNumber(number).Hash(),
 			AccKey: crypto.Keccak256(testContractAddr[:]),
 		}
 		cost := server.peer.peer.GetRequestCost(GetCodeMsg, 1)
@@ -354,7 +354,7 @@ func testGetProofs(t *testing.T, protocol int) {
 
 	accounts := []common.Address{bankAddr, userAddr1, userAddr2, signerAddr, {}}
 	for i := uint64(0); i <= bc.CurrentBlock().NumberU64(); i++ {
-		header := bc.g3theaderByNumber(i)
+		header := bc.getheaderByNumber(i)
 		trie, _ := trie.New(header.Root, trie.NewDatabase(server.db))
 
 		for _, acc := range accounts {
@@ -385,7 +385,7 @@ func testGetStaleProof(t *testing.T, protocol int) {
 
 	check := func(number uint64, wantOK bool) {
 		var (
-			header  = bc.g3theaderByNumber(number)
+			header  = bc.getheaderByNumber(number)
 			account = crypto.Keccak256(userAddr1.Bytes())
 		)
 		req := &ProofReq{
@@ -433,7 +433,7 @@ func testGetCHTProofs(t *testing.T, protocol int) {
 	bc := server.handler.blockchain
 
 	// Assemble the proofs from the different protocols
-	header := bc.g3theaderByNumber(config.ChtSize - 1)
+	header := bc.getheaderByNumber(config.ChtSize - 1)
 	rlp, _ := rlp.EncodeToBytes(header)
 
 	key := make([]byte, 8)
@@ -442,7 +442,7 @@ func testGetCHTProofs(t *testing.T, protocol int) {
 	proofsV2 := HelperTrieResps{
 		AuxData: [][]byte{rlp},
 	}
-	root := light.GetChtRoot(server.db, 0, bc.g3theaderByNumber(config.ChtSize-1).Hash())
+	root := light.GetChtRoot(server.db, 0, bc.getheaderByNumber(config.ChtSize-1).Hash())
 	trie, _ := trie.New(root, trie.NewDatabase(rawdb.NewTable(server.db, light.ChtTablePrefix)))
 	trie.Prove(key, 0, &proofsV2.Proofs)
 	// Assemble the requests for the different protocols
@@ -497,7 +497,7 @@ func testGetBloombitsProofs(t *testing.T, protocol int) {
 		}}
 		var proofs HelperTrieResps
 
-		root := light.GetBloomTrieRoot(server.db, 0, bc.g3theaderByNumber(config.BloomTrieSize-1).Hash())
+		root := light.GetBloomTrieRoot(server.db, 0, bc.getheaderByNumber(config.BloomTrieSize-1).Hash())
 		trie, _ := trie.New(root, trie.NewDatabase(rawdb.NewTable(server.db, light.BloomTrieTablePrefix)))
 		trie.Prove(key, 0, &proofs.Proofs)
 

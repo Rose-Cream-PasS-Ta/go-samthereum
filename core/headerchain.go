@@ -92,14 +92,14 @@ func NewHeaderChain(chainDb ethdb.Database, config *params.ChainConfig, engine c
 		engine:        engine,
 	}
 
-	hc.genesisHeader = hc.g3theaderByNumber(0)
+	hc.genesisHeader = hc.getheaderByNumber(0)
 	if hc.genesisHeader == nil {
 		return nil, ErrNoGenesis
 	}
 
 	hc.currentHeader.Store(hc.genesisHeader)
 	if head := rawdb.ReadHeadBlockHash(chainDb); head != (common.Hash{}) {
-		if chead := hc.g3theaderByHash(head); chead != nil {
+		if chead := hc.getheaderByHash(head); chead != nil {
 			hc.currentHeader.Store(chead)
 		}
 	}
@@ -171,14 +171,14 @@ func (hc *HeaderChain) WriteHeader(header *types.Header) (status WriteStatus, er
 		var (
 			headHash   = header.ParentHash
 			headNumber = header.Number.Uint64() - 1
-			headHeader = hc.g3theader(headHash, headNumber)
+			headHeader = hc.getheader(headHash, headNumber)
 		)
 		for rawdb.ReadCanonicalHash(hc.chainDb, headNumber) != headHash {
 			rawdb.WriteCanonicalHash(hc.chainDb, headHash, headNumber)
 
 			headHash = headHeader.ParentHash
 			headNumber = headHeader.Number.Uint64() - 1
-			headHeader = hc.g3theader(headHash, headNumber)
+			headHeader = hc.getheader(headHash, headNumber)
 		}
 		// Extend the canonical chain with the new header
 		rawdb.WriteCanonicalHash(hc.chainDb, hash, number)
@@ -311,7 +311,7 @@ func (hc *HeaderChain) InsertHeaderChain(chain []*types.Header, writeHeader WhCa
 // hash, fetching towards the genesis block.
 func (hc *HeaderChain) GetBlockHashesFromHash(hash common.Hash, max uint64) []common.Hash {
 	// Get the origin header from which to fetch
-	header := hc.g3theaderByHash(hash)
+	header := hc.getheaderByHash(hash)
 	if header == nil {
 		return nil
 	}
@@ -319,7 +319,7 @@ func (hc *HeaderChain) GetBlockHashesFromHash(hash common.Hash, max uint64) []co
 	chain := make([]common.Hash, 0, max)
 	for i := uint64(0); i < max; i++ {
 		next := header.ParentHash
-		if header = hc.g3theader(next, header.Number.Uint64()-1); header == nil {
+		if header = hc.getheader(next, header.Number.Uint64()-1); header == nil {
 			break
 		}
 		chain = append(chain, next)
@@ -341,7 +341,7 @@ func (hc *HeaderChain) GetAncestor(hash common.Hash, number, ancestor uint64, ma
 	}
 	if ancestor == 1 {
 		// in this case it is cheaper to just read the header
-		if header := hc.g3theader(hash, number); header != nil {
+		if header := hc.getheader(hash, number); header != nil {
 			return header.ParentHash, number - 1
 		} else {
 			return common.Hash{}, 0
@@ -360,7 +360,7 @@ func (hc *HeaderChain) GetAncestor(hash common.Hash, number, ancestor uint64, ma
 		}
 		*maxNonCanonical--
 		ancestor--
-		header := hc.g3theader(hash, number)
+		header := hc.getheader(hash, number)
 		if header == nil {
 			return common.Hash{}, 0
 		}
@@ -404,9 +404,9 @@ func (hc *HeaderChain) WriteTd(hash common.Hash, number uint64, td *big.Int) err
 	return nil
 }
 
-// g3theader retrieves a block header from the database by hash and number,
+// getheader retrieves a block header from the database by hash and number,
 // caching it if found.
-func (hc *HeaderChain) g3theader(hash common.Hash, number uint64) *types.Header {
+func (hc *HeaderChain) getheader(hash common.Hash, number uint64) *types.Header {
 	// Short circuit if the header's already in the cache, retrieve otherwise
 	if header, ok := hc.headerCache.Get(hash); ok {
 		return header.(*types.Header)
@@ -420,14 +420,14 @@ func (hc *HeaderChain) g3theader(hash common.Hash, number uint64) *types.Header 
 	return header
 }
 
-// g3theaderByHash retrieves a block header from the database by hash, caching it if
+// getheaderByHash retrieves a block header from the database by hash, caching it if
 // found.
-func (hc *HeaderChain) g3theaderByHash(hash common.Hash) *types.Header {
+func (hc *HeaderChain) getheaderByHash(hash common.Hash) *types.Header {
 	number := hc.GetBlockNumber(hash)
 	if number == nil {
 		return nil
 	}
-	return hc.g3theader(hash, *number)
+	return hc.getheader(hash, *number)
 }
 
 // HasHeader checks if a block header is present in the database or not.
@@ -438,14 +438,14 @@ func (hc *HeaderChain) HasHeader(hash common.Hash, number uint64) bool {
 	return rawdb.HasHeader(hc.chainDb, hash, number)
 }
 
-// g3theaderByNumber retrieves a block header from the database by number,
+// getheaderByNumber retrieves a block header from the database by number,
 // caching it (associated with its hash) if found.
-func (hc *HeaderChain) g3theaderByNumber(number uint64) *types.Header {
+func (hc *HeaderChain) getheaderByNumber(number uint64) *types.Header {
 	hash := rawdb.ReadCanonicalHash(hc.chainDb, number)
 	if hash == (common.Hash{}) {
 		return nil
 	}
-	return hc.g3theader(hash, number)
+	return hc.getheader(hash, number)
 }
 
 func (hc *HeaderChain) GetCanonicalHash(number uint64) common.Hash {
@@ -488,7 +488,7 @@ func (hc *HeaderChain) SetHead(head uint64, updateFn UpdateHeadBlocksCallback, d
 		hash, num := hdr.Hash(), hdr.Number.Uint64()
 
 		// Rewind block chain to new head.
-		parent := hc.g3theader(hdr.ParentHash, num-1)
+		parent := hc.getheader(hdr.ParentHash, num-1)
 		if parent == nil {
 			parent = hc.genesisHeader
 		}

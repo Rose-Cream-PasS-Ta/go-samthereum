@@ -36,14 +36,14 @@ type ChainReader interface {
 	// CurrentHeader retrieves the current header from the local chain.
 	CurrentHeader() *types.Header
 
-	// g3theader retrieves a block header from the database by hash and number.
-	g3theader(hash common.Hash, number uint64) *types.Header
+	// getheader retrieves a block header from the database by hash and number.
+	getheader(hash common.Hash, number uint64) *types.Header
 
-	// g3theaderByNumber retrieves a block header from the database by number.
-	g3theaderByNumber(number uint64) *types.Header
+	// getheaderByNumber retrieves a block header from the database by number.
+	getheaderByNumber(number uint64) *types.Header
 
-	// g3theaderByHash retrieves a block header from the database by its hash.
-	g3theaderByHash(hash common.Hash) *types.Header
+	// getheaderByHash retrieves a block header from the database by its hash.
+	getheaderByHash(hash common.Hash) *types.Header
 
 	// GetBlock retrieves a block from the database by hash and number.
 	GetBlock(hash common.Hash, number uint64) *types.Block

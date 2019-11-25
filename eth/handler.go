@@ -405,15 +405,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if hashMode {
 				if first {
 					first = false
-					origin = pm.blockchain.g3theaderByHash(query.Origin.Hash)
+					origin = pm.blockchain.getheaderByHash(query.Origin.Hash)
 					if origin != nil {
 						query.Origin.Number = origin.Number.Uint64()
 					}
 				} else {
-					origin = pm.blockchain.g3theader(query.Origin.Hash, query.Origin.Number)
+					origin = pm.blockchain.getheader(query.Origin.Hash, query.Origin.Number)
 				}
 			} else {
-				origin = pm.blockchain.g3theaderByNumber(query.Origin.Number)
+				origin = pm.blockchain.getheaderByNumber(query.Origin.Number)
 			}
 			if origin == nil {
 				break
@@ -443,7 +443,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
-					if header := pm.blockchain.g3theaderByNumber(next); header != nil {
+					if header := pm.blockchain.getheaderByNumber(next); header != nil {
 						nextHash := header.Hash()
 						expOldHash, _ := pm.blockchain.GetAncestor(nextHash, next, query.Skip+1, &maxNonCanonical)
 						if expOldHash == query.Origin.Hash {
@@ -636,7 +636,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			// Retrieve the requested block's receipts, skipping if unknown to us
 			results := pm.blockchain.GetReceiptsByHash(hash)
 			if results == nil {
-				if header := pm.blockchain.g3theaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
+				if header := pm.blockchain.getheaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
 					continue
 				}
 			}

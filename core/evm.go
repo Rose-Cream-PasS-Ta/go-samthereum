@@ -31,8 +31,8 @@ type ChainContext interface {
 	// Engine retrieves the chain's consensus engine.
 	Engine() consensus.Engine
 
-	// g3theader returns the hash corresponding to their hash.
-	g3theader(common.Hash, uint64) *types.Header
+	// getheader returns the hash corresponding to their hash.
+	getheader(common.Hash, uint64) *types.Header
 }
 
 // NewEVMContext creates a new context for use in the EVM.
@@ -74,7 +74,7 @@ func g3thashFn(ref *types.Header, chain ChainContext) func(n uint64) common.Hash
 			return hash
 		}
 		// Not cached, iterate the blocks and cache the hashes
-		for header := chain.g3theader(ref.ParentHash, ref.Number.Uint64()-1); header != nil; header = chain.g3theader(header.ParentHash, header.Number.Uint64()-1) {
+		for header := chain.getheader(ref.ParentHash, ref.Number.Uint64()-1); header != nil; header = chain.getheader(header.ParentHash, header.Number.Uint64()-1) {
 			cache[header.Number.Uint64()-1] = header.ParentHash
 			if n == header.Number.Uint64()-1 {
 				return header.ParentHash

@@ -602,7 +602,7 @@ func (s *Service) reportHistory(conn *websocket.Conn, list []uint64) error {
 		if s.eth != nil {
 			block = s.eth.BlockChain().GetBlockByNumber(number)
 		} else {
-			if header := s.les.BlockChain().g3theaderByNumber(number); header != nil {
+			if header := s.les.BlockChain().getheaderByNumber(number); header != nil {
 				block = types.NewBlockWithHeader(header)
 			}
 		}

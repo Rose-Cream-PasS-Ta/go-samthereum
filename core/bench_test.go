@@ -293,7 +293,7 @@ func benchReadChain(b *testing.B, full bool, count uint64) {
 		}
 
 		for n := uint64(0); n < count; n++ {
-			header := chain.g3theaderByNumber(n)
+			header := chain.getheaderByNumber(n)
 			if full {
 				hash := header.Hash()
 				rawdb.ReadBody(db, hash, n)

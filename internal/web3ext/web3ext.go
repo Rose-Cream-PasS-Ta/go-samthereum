@@ -500,13 +500,13 @@ web3._extend({
 			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
 		}),
 		new web3._extend.Method({
-			name: 'g3theaderByNumber',
-			call: 'eth_g3theaderByNumber',
+			name: 'getheaderByNumber',
+			call: 'eth_getheaderByNumber',
 			params: 1
 		}),
 		new web3._extend.Method({
-			name: 'g3theaderByHash',
-			call: 'eth_g3theaderByHash',
+			name: 'getheaderByHash',
+			call: 'eth_getheaderByHash',
 			params: 1
 		}),
 		new web3._extend.Method({
