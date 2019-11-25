@@ -36,11 +36,6 @@ func InitSingleTest() {
 	mrand.Seed(seed)
 }
 
-func InitDebugTest(i int64) {
-	seed = i
-	mrand.Seed(seed)
-}
-
 type FilterTestCase struct {
 	f      *Filter
 	id     string
@@ -56,7 +51,7 @@ func generateFilter(t *testing.T, symmetric bool) (*Filter, error) {
 	f.Topics = make([][]byte, topicNum)
 	for i := 0; i < topicNum; i++ {
 		f.Topics[i] = make([]byte, 4)
-		mrand.Read(f.Topics[i][:])
+		mrand.Read(f.Topics[i])
 		f.Topics[i][0] = 0x01
 	}
 
@@ -88,7 +83,7 @@ func generateTestCases(t *testing.T, SizeTestFilters int) []FilterTestCase {
 	for i := 0; i < SizeTestFilters; i++ {
 		f, _ := generateFilter(t, true)
 		cases[i].f = f
-		cases[i].alive = (mrand.Int()&int(1) == 0)
+		cases[i].alive = mrand.Int()&int(1) == 0
 	}
 	return cases
 }
@@ -109,7 +104,7 @@ func TestInstallFilters(t *testing.T) {
 			t.Fatalf("seed %d: failed to install filter: %s", seed, err)
 		}
 		tst[i].id = j
-		if len(j) != keyIdSize*2 {
+		if len(j) != keyIDSize*2 {
 			t.Fatalf("seed %d: wrong filter id size [%d]", seed, len(j))
 		}
 	}
@@ -122,7 +117,7 @@ func TestInstallFilters(t *testing.T) {
 
 	for i, testCase := range tst {
 		fil := filters.Get(testCase.id)
-		exist := (fil != nil)
+		exist := fil != nil
 		if exist != testCase.alive {
 			t.Fatalf("seed %d: failed alive: %d, %v, %v", seed, i, exist, testCase.alive)
 		}
@@ -229,6 +224,36 @@ func TestInstallIdenticalFilters(t *testing.T) {
 	}
 }
 
+func TestInstallFilterWithSymAndAsymKeys(t *testing.T) {
+	InitSingleTest()
+
+	w := New(&Config{})
+	filters := NewFilters(w)
+	filter1, _ := generateFilter(t, true)
+
+	asymKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Unable to create asymetric keys: %v", err)
+	}
+
+	// Copy the first filter since some of its fields
+	// are randomly gnerated.
+	filter := &Filter{
+		KeySym:   filter1.KeySym,
+		KeyAsym:  asymKey,
+		Topics:   filter1.Topics,
+		PoW:      filter1.PoW,
+		AllowP2P: filter1.AllowP2P,
+		Messages: make(map[common.Hash]*ReceivedMessage),
+	}
+
+	_, err = filters.Install(filter)
+
+	if err == nil {
+		t.Fatalf("Error detecting that a filter had both an asymmetric and symmetric key, with seed %d", seed)
+	}
+}
+
 func TestComparePubKey(t *testing.T) {
 	InitSingleTest()
 
@@ -273,24 +298,14 @@ func TestMatchEnvelope(t *testing.T) {
 		t.Fatalf("failed generateMessageParams with seed %d: %s.", seed, err)
 	}
 
-	params.Topic[0] = 0xFF // ensure mismatch
+	params.Topic[0] = 0xFF // topic mismatch
 
-	// mismatch with pseudo-random data
 	msg, err := NewSentMessage(params)
 	if err != nil {
 		t.Fatalf("failed to create new message with seed %d: %s.", seed, err)
 	}
-	env, err := msg.Wrap(params)
-	if err != nil {
+	if _, err = msg.Wrap(params); err != nil {
 		t.Fatalf("failed Wrap with seed %d: %s.", seed, err)
-	}
-	match := fsym.MatchEnvelope(env)
-	if match {
-		t.Fatalf("failed MatchEnvelope symmetric with seed %d.", seed)
-	}
-	match = fasym.MatchEnvelope(env)
-	if match {
-		t.Fatalf("failed MatchEnvelope asymmetric with seed %d.", seed)
 	}
 
 	// encrypt symmetrically
@@ -301,21 +316,15 @@ func TestMatchEnvelope(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create new message with seed %d: %s.", seed, err)
 	}
-	env, err = msg.Wrap(params)
+	env, err := msg.Wrap(params)
 	if err != nil {
 		t.Fatalf("failed Wrap() with seed %d: %s.", seed, err)
 	}
 
 	// symmetric + matching topic: match
-	match = fsym.MatchEnvelope(env)
+	match := fsym.MatchEnvelope(env)
 	if !match {
 		t.Fatalf("failed MatchEnvelope() symmetric with seed %d.", seed)
-	}
-
-	// asymmetric + matching topic: mismatch
-	match = fasym.MatchEnvelope(env)
-	if match {
-		t.Fatalf("failed MatchEnvelope() asymmetric with seed %d.", seed)
 	}
 
 	// symmetric + matching topic + insufficient PoW: mismatch
@@ -372,7 +381,7 @@ func TestMatchEnvelope(t *testing.T) {
 	// asymmetric + matching topic: match
 	fasym.Topics[i] = fasym.Topics[i+1]
 	match = fasym.MatchEnvelope(env)
-	if match {
+	if !match {
 		t.Fatalf("failed MatchEnvelope(asymmetric + matching topic) with seed %d.", seed)
 	}
 
@@ -407,7 +416,8 @@ func TestMatchEnvelope(t *testing.T) {
 	// filter with topic + envelope without topic: mismatch
 	fasym.Topics = fsym.Topics
 	match = fasym.MatchEnvelope(env)
-	if match {
+	if !match {
+		// topic mismatch should have no affect, as topics are handled by topic matchers
 		t.Fatalf("failed MatchEnvelope(filter without topic + envelope without topic) with seed %d.", seed)
 	}
 }
@@ -463,7 +473,8 @@ func TestMatchMessageSym(t *testing.T) {
 
 	// topic mismatch
 	f.Topics[index][0]++
-	if f.MatchMessage(msg) {
+	if !f.MatchMessage(msg) {
+		// topic mismatch should have no affect, as topics are handled by topic matchers
 		t.Fatalf("failed MatchEnvelope(topic mismatch) with seed %d.", seed)
 	}
 	f.Topics[index][0]--
@@ -556,7 +567,8 @@ func TestMatchMessageAsym(t *testing.T) {
 
 	// topic mismatch
 	f.Topics[index][0]++
-	if f.MatchMessage(msg) {
+	if !f.MatchMessage(msg) {
+		// topic mismatch should have no affect, as topics are handled by topic matchers
 		t.Fatalf("failed MatchEnvelope(topic mismatch) with seed %d.", seed)
 	}
 	f.Topics[index][0]--
@@ -776,6 +788,7 @@ func TestWatchers(t *testing.T) {
 func TestVariableTopics(t *testing.T) {
 	InitSingleTest()
 
+	const lastTopicByte = 3
 	var match bool
 	params, err := generateMessageParams()
 	if err != nil {
@@ -796,19 +809,17 @@ func TestVariableTopics(t *testing.T) {
 	}
 
 	for i := 0; i < 4; i++ {
-		arr := make([]byte, i+1, 4)
-		copy(arr, env.Topic[:i+1])
-
-		f.Topics[4] = arr
+		env.Topic = BytesToTopic(f.Topics[i])
 		match = f.MatchEnvelope(env)
 		if !match {
 			t.Fatalf("failed MatchEnvelope symmetric with seed %d, step %d.", seed, i)
 		}
 
-		f.Topics[4][i]++
+		f.Topics[i][lastTopicByte]++
 		match = f.MatchEnvelope(env)
-		if match {
-			t.Fatalf("MatchEnvelope symmetric with seed %d, step %d: false positive.", seed, i)
+		if !match {
+			// topic mismatch should have no affect, as topics are handled by topic matchers
+			t.Fatalf("MatchEnvelope symmetric with seed %d, step %d.", seed, i)
 		}
 	}
 }

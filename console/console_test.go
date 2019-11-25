@@ -31,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/internal/jsre"
+	"github.com/ethereum/go-ethereum/miner"
 	"github.com/ethereum/go-ethereum/node"
 )
 
@@ -68,6 +69,7 @@ func (p *hookedPrompter) PromptConfirm(prompt string) (bool, error) {
 }
 func (p *hookedPrompter) SetHistory(history []string)              {}
 func (p *hookedPrompter) AppendHistory(command string)             {}
+func (p *hookedPrompter) ClearHistory()                            {}
 func (p *hookedPrompter) SetWordCompleter(completer WordCompleter) {}
 
 // tester is a console test environment for the console tests to operate on.
@@ -95,8 +97,10 @@ func newTester(t *testing.T, confOverride func(*eth.Config)) *tester {
 		t.Fatalf("failed to create node: %v", err)
 	}
 	ethConf := &eth.Config{
-		Genesis:   core.DeveloperGenesisBlock(15, common.Address{}),
-		Etherbase: common.HexToAddress(testAddress),
+		Genesis: core.DeveloperGenesisBlock(15, common.Address{}),
+		Miner: miner.Config{
+			Etherbase: common.HexToAddress(testAddress),
+		},
 		Ethash: ethash.Config{
 			PowMode: ethash.ModeTest,
 		},
@@ -148,8 +152,8 @@ func (env *tester) Close(t *testing.T) {
 	if err := env.console.Stop(false); err != nil {
 		t.Errorf("failed to stop embedded console: %v", err)
 	}
-	if err := env.stack.Stop(); err != nil {
-		t.Errorf("failed to stop embedded node: %v", err)
+	if err := env.stack.Close(); err != nil {
+		t.Errorf("failed to tear down embedded node: %v", err)
 	}
 	os.RemoveAll(env.workspace)
 }
@@ -163,7 +167,7 @@ func TestWelcome(t *testing.T) {
 
 	tester.console.Welcome()
 
-	output := string(tester.output.Bytes())
+	output := tester.output.String()
 	if want := "Welcome"; !strings.Contains(output, want) {
 		t.Fatalf("console output missing welcome message: have\n%s\nwant also %s", output, want)
 	}
@@ -187,7 +191,7 @@ func TestEvaluate(t *testing.T) {
 	defer tester.Close(t)
 
 	tester.console.Evaluate("2 + 2")
-	if output := string(tester.output.Bytes()); !strings.Contains(output, "4") {
+	if output := tester.output.String(); !strings.Contains(output, "4") {
 		t.Fatalf("statement evaluation failed: have %s, want %s", output, "4")
 	}
 }
@@ -200,7 +204,7 @@ func TestInteractive(t *testing.T) {
 
 	go tester.console.Interactive()
 
-	// Wait for a promt and send a statement back
+	// Wait for a prompt and send a statement back
 	select {
 	case <-tester.input.scheduler:
 	case <-time.After(time.Second):
@@ -211,13 +215,13 @@ func TestInteractive(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatalf("input feedback timeout")
 	}
-	// Wait for the second promt and ensure first statement was evaluated
+	// Wait for the second prompt and ensure first statement was evaluated
 	select {
 	case <-tester.input.scheduler:
 	case <-time.After(time.Second):
 		t.Fatalf("secondary prompt timeout")
 	}
-	if output := string(tester.output.Bytes()); !strings.Contains(output, "4") {
+	if output := tester.output.String(); !strings.Contains(output, "4") {
 		t.Fatalf("statement evaluation failed: have %s, want %s", output, "4")
 	}
 }
@@ -229,7 +233,7 @@ func TestPreload(t *testing.T) {
 	defer tester.Close(t)
 
 	tester.console.Evaluate("preloaded")
-	if output := string(tester.output.Bytes()); !strings.Contains(output, "some-preloaded-string") {
+	if output := tester.output.String(); !strings.Contains(output, "some-preloaded-string") {
 		t.Fatalf("preloaded variable missing: have %s, want %s", output, "some-preloaded-string")
 	}
 }
@@ -242,13 +246,13 @@ func TestExecute(t *testing.T) {
 	tester.console.Execute("exec.js")
 
 	tester.console.Evaluate("execed")
-	if output := string(tester.output.Bytes()); !strings.Contains(output, "some-executed-string") {
+	if output := tester.output.String(); !strings.Contains(output, "some-executed-string") {
 		t.Fatalf("execed variable missing: have %s, want %s", output, "some-executed-string")
 	}
 }
 
 // Tests that the JavaScript objects returned by statement executions are properly
-// pretty printed instead of just displaing "[object]".
+// pretty printed instead of just displaying "[object]".
 func TestPrettyPrint(t *testing.T) {
 	tester := newTester(t, nil)
 	defer tester.Close(t)
@@ -274,7 +278,7 @@ func TestPrettyPrint(t *testing.T) {
   string: ` + two + `
 }
 `
-	if output := string(tester.output.Bytes()); output != want {
+	if output := tester.output.String(); output != want {
 		t.Fatalf("pretty print mismatch: have %s, want %s", output, want)
 	}
 }
@@ -286,7 +290,7 @@ func TestPrettyError(t *testing.T) {
 	tester.console.Evaluate("throw 'hello'")
 
 	want := jsre.ErrorColor("hello") + "\n"
-	if output := string(tester.output.Bytes()); output != want {
+	if output := tester.output.String(); output != want {
 		t.Fatalf("pretty error mismatch: have %s, want %s", output, want)
 	}
 }
@@ -299,7 +303,7 @@ func TestIndenting(t *testing.T) {
 	}{
 		{`var a = 1;`, 0},
 		{`"some string"`, 0},
-		{`"some string with (parentesis`, 0},
+		{`"some string with (parenthesis`, 0},
 		{`"some string with newline
 		("`, 0},
 		{`function v(a,b) {}`, 0},

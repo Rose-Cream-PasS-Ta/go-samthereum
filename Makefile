@@ -2,24 +2,19 @@
 # with Go source code. If you know what GOPATH is then you probably
 # don't need to bother with make.
 
-.PHONY: g3th android ios g3th-cross swarm evm all test clean
+.PHONY: g3th android ios g3th-cross evm all test clean
 .PHONY: g3th-linux g3th-linux-386 g3th-linux-amd64 g3th-linux-mips64 g3th-linux-mips64le
 .PHONY: g3th-linux-arm g3th-linux-arm-5 g3th-linux-arm-6 g3th-linux-arm-7 g3th-linux-arm64
 .PHONY: g3th-darwin g3th-darwin-386 g3th-darwin-amd64
 .PHONY: g3th-windows g3th-windows-386 g3th-windows-amd64
 
-GOBIN = $(shell pwd)/build/bin
+GOBIN = ./build/bin
 GO ?= latest
 
 g3th:
 	build/env.sh go run build/ci.go install ./cmd/g3th
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/g3th\" to launch g3th."
-
-swarm:
-	build/env.sh go run build/ci.go install ./cmd/swarm
-	@echo "Done building."
-	@echo "Run \"$(GOBIN)/swarm\" to launch swarm."
 
 all:
 	build/env.sh go run build/ci.go install
@@ -32,12 +27,16 @@ android:
 ios:
 	build/env.sh go run build/ci.go xcode --local
 	@echo "Done building."
-	@echo "Import \"$(GOBIN)/G3TH.framework\" to use the library."
+	@echo "Import \"$(GOBIN)/Geth.framework\" to use the library."
 
 test: all
 	build/env.sh go run build/ci.go test
 
+lint: ## Run linters.
+	build/env.sh go run build/ci.go lint
+
 clean:
+	go clean -cache
 	rm -fr build/_workspace/pkg/ $(GOBIN)/*
 
 # The devtools target installs tools required for 'go generate'.
@@ -45,9 +44,13 @@ clean:
 
 devtools:
 	env GOBIN= go get -u golang.org/x/tools/cmd/stringer
-	env GOBIN= go get -u github.com/jteeuwen/go-bindata/go-bindata
+	env GOBIN= go get -u github.com/kevinburke/go-bindata/go-bindata
 	env GOBIN= go get -u github.com/fjl/gencodec
+	env GOBIN= go get -u github.com/golang/protobuf/protoc-gen-go
 	env GOBIN= go install ./cmd/abigen
+	@type "npm" 2> /dev/null || echo 'Please install node.js and npm'
+	@type "solc" 2> /dev/null || echo 'Please install solc'
+	@type "protoc" 2> /dev/null || echo 'Please install protoc'
 
 # Cross Compilation Targets (xgo)
 

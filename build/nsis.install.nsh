@@ -3,9 +3,9 @@ InstallDir "$InstDir"
 OutFile "${OUTPUTFILE}" # set through command line arguments
 
 # Links for "Add/Remove Programs"
-!define HELPURL "https://github.com/musicoin/go-musicoin/issues"
-!define UPDATEURL "https://github.com/musicoin/go-musicoin/releases"
-!define ABOUTURL "https://github.com/musicoin/go-musicoin"
+!define HELPURL "https://github.com/ethereum/go-ethereum/issues"
+!define UPDATEURL "https://github.com/ethereum/go-ethereum/releases"
+!define ABOUTURL "https://github.com/ethereum/go-ethereum#ethereum-go"
 !define /date NOW "%Y%m%d"
 
 PageEx license
@@ -13,9 +13,9 @@ PageEx license
 PageExEnd
 
 # Install g3th binary
-Section "G3TH" G3TH_IDX
+Section "Geth" GETH_IDX
   SetOutPath $INSTDIR
-  file {{.G3TH}}
+  file {{.Geth}}
 
   # Create start menu launcher
   createDirectory "$SMPROGRAMS\${APPNAME}"
@@ -24,14 +24,14 @@ Section "G3TH" G3TH_IDX
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "" ""
 
   # Firewall - remove rules (if exists)
-  SimpleFC::AdvRemoveRule "G3TH incoming peers (TCP:30303)"
-  SimpleFC::AdvRemoveRule "G3TH outgoing peers (TCP:30303)"
-  SimpleFC::AdvRemoveRule "G3TH UDP discovery (UDP:30303)"
+  SimpleFC::AdvRemoveRule "Geth incoming peers (TCP:30303)"
+  SimpleFC::AdvRemoveRule "Geth outgoing peers (TCP:30303)"
+  SimpleFC::AdvRemoveRule "Geth UDP discovery (UDP:30303)"
 
   # Firewall - add rules
-  SimpleFC::AdvAddRule "G3TH incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" 30303 "" "" ""
-  SimpleFC::AdvAddRule "G3TH outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
-  SimpleFC::AdvAddRule "G3TH UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
+  SimpleFC::AdvAddRule "Geth incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" 30303 "" "" ""
+  SimpleFC::AdvAddRule "Geth outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
+  SimpleFC::AdvAddRule "Geth UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\g3th.exe" "" "" "Ethereum" "" 30303 "" ""
 
   # Set default IPC endpoint (https://github.com/ethereum/EIPs/issues/147)
   ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "R" "HKLM" "\\.\pipe\g3th.ipc"
@@ -54,8 +54,8 @@ Var GetInstalledSize.total
 Function GetInstalledSize
   StrCpy $GetInstalledSize.total 0
 
-  ${if} ${SectionIsSelected} ${G3TH_IDX}
-    SectionGetSize ${G3TH_IDX} $0
+  ${if} ${SectionIsSelected} ${GETH_IDX}
+    SectionGetSize ${GETH_IDX} $0
     IntOp $GetInstalledSize.total $GetInstalledSize.total + $0
   ${endif}
 
