@@ -120,7 +120,7 @@ func (dl *downloadTester) sync(id string, td *big.Int, mode SyncMode) error {
 
 // HasHeader checks if a header is present in the testers canonical chain.
 func (dl *downloadTester) HasHeader(hash common.Hash, number uint64) bool {
-	return dl.GetHeaderByHash(hash) != nil
+	return dl.g3theaderByHash(hash) != nil
 }
 
 // HasBlock checks if a block is present in the testers canonical chain.
@@ -140,8 +140,8 @@ func (dl *downloadTester) HasFastBlock(hash common.Hash, number uint64) bool {
 	return ok
 }
 
-// GetHeader retrieves a header from the testers canonical chain.
-func (dl *downloadTester) GetHeaderByHash(hash common.Hash) *types.Header {
+// g3theader retrieves a header from the testers canonical chain.
+func (dl *downloadTester) g3theaderByHash(hash common.Hash) *types.Header {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 

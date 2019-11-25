@@ -85,7 +85,7 @@ func (r *lru) Promote(n *Node) {
 	r.mu.Lock()
 	if n.CacheData == nil {
 		if n.Size() <= r.capacity {
-			rn := &lruNode{n: n, h: n.GetHandle()}
+			rn := &lruNode{n: n, h: n.g3thandle()}
 			rn.insert(&r.recent)
 			n.CacheData = unsafe.Pointer(rn)
 			r.used += n.Size()

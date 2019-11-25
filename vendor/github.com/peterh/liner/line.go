@@ -417,7 +417,7 @@ func (s *State) reverseISearch(origLine []rune, origPos int) ([]rune, int, inter
 		return []rune(fmt.Sprintf(prompt, search)), []rune(foundLine), foundPos
 	}
 
-	history, positions := s.getHistoryByPattern(string(line))
+	history, positions := s.g3thistoryByPattern(string(line))
 	historyPos := len(history) - 1
 
 	for {
@@ -454,7 +454,7 @@ func (s *State) reverseISearch(origLine []rune, origPos int) ([]rune, int, inter
 					pos -= n
 
 					// For each char deleted, display the last matching line of history
-					history, positions := s.getHistoryByPattern(string(line))
+					history, positions := s.g3thistoryByPattern(string(line))
 					historyPos = len(history) - 1
 					if len(history) > 0 {
 						foundLine = history[historyPos]
@@ -477,7 +477,7 @@ func (s *State) reverseISearch(origLine []rune, origPos int) ([]rune, int, inter
 				pos++
 
 				// For each keystroke typed, display the last matching line of history
-				history, positions = s.getHistoryByPattern(string(line))
+				history, positions = s.g3thistoryByPattern(string(line))
 				historyPos = len(history) - 1
 				if len(history) > 0 {
 					foundLine = history[historyPos]
@@ -713,7 +713,7 @@ mainLoop:
 			case ctrlP: // up
 				historyAction = true
 				if historyStale {
-					historyPrefix = s.getHistoryByPrefix(string(line))
+					historyPrefix = s.g3thistoryByPrefix(string(line))
 					historyPos = len(historyPrefix)
 					historyStale = false
 				}
@@ -731,7 +731,7 @@ mainLoop:
 			case ctrlN: // down
 				historyAction = true
 				if historyStale {
-					historyPrefix = s.getHistoryByPrefix(string(line))
+					historyPrefix = s.g3thistoryByPrefix(string(line))
 					historyPos = len(historyPrefix)
 					historyStale = false
 				}
@@ -933,7 +933,7 @@ mainLoop:
 			case up:
 				historyAction = true
 				if historyStale {
-					historyPrefix = s.getHistoryByPrefix(string(line))
+					historyPrefix = s.g3thistoryByPrefix(string(line))
 					historyPos = len(historyPrefix)
 					historyStale = false
 				}
@@ -950,7 +950,7 @@ mainLoop:
 			case down:
 				historyAction = true
 				if historyStale {
-					historyPrefix = s.getHistoryByPrefix(string(line))
+					historyPrefix = s.g3thistoryByPrefix(string(line))
 					historyPos = len(historyPrefix)
 					historyStale = false
 				}

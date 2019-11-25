@@ -43,13 +43,13 @@ func tmpDatadirWithKeystore(t *testing.T) string {
 }
 
 func TestAccountListEmpty(t *testing.T) {
-	g3th := runGeth(t, "account", "list")
+	g3th := rung3th(t, "account", "list")
 	g3th.ExpectExit()
 }
 
 func TestAccountList(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	g3th := runGeth(t, "account", "list", "--datadir", datadir)
+	g3th := rung3th(t, "account", "list", "--datadir", datadir)
 	defer g3th.ExpectExit()
 	if runtime.GOOS == "windows" {
 		g3th.Expect(`
@@ -67,7 +67,7 @@ Account #2: {289d485d9771714cce91d3393d764e1311907acc} keystore://{{.Datadir}}/k
 }
 
 func TestAccountNew(t *testing.T) {
-	g3th := runGeth(t, "account", "new", "--lightkdf")
+	g3th := rung3th(t, "account", "new", "--lightkdf")
 	defer g3th.ExpectExit()
 	g3th.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
@@ -89,7 +89,7 @@ Path of the secret key file: .*UTC--.+--[0-9a-f]{40}
 }
 
 func TestAccountNewBadRepeat(t *testing.T) {
-	g3th := runGeth(t, "account", "new", "--lightkdf")
+	g3th := rung3th(t, "account", "new", "--lightkdf")
 	defer g3th.ExpectExit()
 	g3th.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
@@ -102,7 +102,7 @@ Fatal: Passwords do not match
 
 func TestAccountUpdate(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	g3th := runGeth(t, "account", "update",
+	g3th := rung3th(t, "account", "update",
 		"--datadir", datadir, "--lightkdf",
 		"f466859ead1932d743d622cb74fc058882e8648a")
 	defer g3th.ExpectExit()
@@ -117,7 +117,7 @@ Repeat password: {{.InputLine "foobar2"}}
 }
 
 func TestWalletImport(t *testing.T) {
-	g3th := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	g3th := rung3th(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer g3th.ExpectExit()
 	g3th.Expect(`
 !! Unsupported terminal, password will be echoed.
@@ -132,7 +132,7 @@ Address: {d4584b5f6229b7be90727b0fc8c6b91bb427821f}
 }
 
 func TestWalletImportBadPassword(t *testing.T) {
-	g3th := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	g3th := rung3th(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer g3th.ExpectExit()
 	g3th.Expect(`
 !! Unsupported terminal, password will be echoed.
@@ -143,7 +143,7 @@ Fatal: could not decrypt key with given password
 
 func TestUnlockFlag(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	g3th := runGeth(t,
+	g3th := rung3th(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
 		"js", "testdata/empty.js")
@@ -167,7 +167,7 @@ Password: {{.InputLine "foobar"}}
 
 func TestUnlockFlagWrongPassword(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	g3th := runGeth(t,
+	g3th := rung3th(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a")
 	defer g3th.ExpectExit()
@@ -186,7 +186,7 @@ Fatal: Failed to unlock account f466859ead1932d743d622cb74fc058882e8648a (could 
 // https://github.com/ethereum/go-ethereum/issues/1785
 func TestUnlockFlagMultiIndex(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	g3th := runGeth(t,
+	g3th := rung3th(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "0,2",
 		"js", "testdata/empty.js")
@@ -213,7 +213,7 @@ Password: {{.InputLine "foobar"}}
 
 func TestUnlockFlagPasswordFile(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	g3th := runGeth(t,
+	g3th := rung3th(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--password", "testdata/passwords.txt", "--unlock", "0,2",
 		"js", "testdata/empty.js")
@@ -233,7 +233,7 @@ func TestUnlockFlagPasswordFile(t *testing.T) {
 
 func TestUnlockFlagPasswordFileWrongPassword(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	g3th := runGeth(t,
+	g3th := rung3th(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--password", "testdata/wrong-passwords.txt", "--unlock", "0,2")
 	defer g3th.ExpectExit()
@@ -244,7 +244,7 @@ Fatal: Failed to unlock account 0 (could not decrypt key with given password)
 
 func TestUnlockFlagAmbiguous(t *testing.T) {
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	g3th := runGeth(t,
+	g3th := rung3th(t,
 		"--keystore", store, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
 		"js", "testdata/empty.js")
@@ -282,7 +282,7 @@ In order to avoid this warning, you need to remove the following duplicate key f
 
 func TestUnlockFlagAmbiguousWrongPassword(t *testing.T) {
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	g3th := runGeth(t,
+	g3th := rung3th(t,
 		"--keystore", store, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a")
 	defer g3th.ExpectExit()

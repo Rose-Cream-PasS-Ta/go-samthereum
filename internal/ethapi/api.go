@@ -604,10 +604,10 @@ func (s *PublicBlockChainAPI) GetProof(ctx context.Context, address common.Addre
 	}, state.Error()
 }
 
-// GetHeaderByNumber returns the requested canonical block header.
+// g3theaderByNumber returns the requested canonical block header.
 // * When blockNr is -1 the chain head is returned.
 // * When blockNr is -2 the pending chain head is returned.
-func (s *PublicBlockChainAPI) GetHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (map[string]interface{}, error) {
+func (s *PublicBlockChainAPI) g3theaderByNumber(ctx context.Context, number rpc.BlockNumber) (map[string]interface{}, error) {
 	header, err := s.b.HeaderByNumber(ctx, number)
 	if header != nil && err == nil {
 		response := s.rpcMarshalHeader(header)
@@ -622,8 +622,8 @@ func (s *PublicBlockChainAPI) GetHeaderByNumber(ctx context.Context, number rpc.
 	return nil, err
 }
 
-// GetHeaderByHash returns the requested header by hash.
-func (s *PublicBlockChainAPI) GetHeaderByHash(ctx context.Context, hash common.Hash) map[string]interface{} {
+// g3theaderByHash returns the requested header by hash.
+func (s *PublicBlockChainAPI) g3theaderByHash(ctx context.Context, hash common.Hash) map[string]interface{} {
 	header, _ := s.b.HeaderByHash(ctx, hash)
 	if header != nil {
 		return s.rpcMarshalHeader(header)

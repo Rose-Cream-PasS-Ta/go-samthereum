@@ -270,7 +270,7 @@ func builtinDate_getUTCDay(call FunctionCall) Value {
 	return toValue_int(dateFromGoDay(date.Time().Weekday()))
 }
 
-func builtinDate_getHours(call FunctionCall) Value {
+func builtinDate_g3thours(call FunctionCall) Value {
 	date := dateObjectOf(call.runtime, call.thisObject())
 	if date.isNaN {
 		return NaNValue()

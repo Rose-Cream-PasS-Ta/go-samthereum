@@ -578,7 +578,7 @@ func (m missingHandle) String() string {
 }
 
 // Returns nil for invalid handles.
-func (c *Server) getHandle(id fuse.HandleID) (shandle *serveHandle) {
+func (c *Server) g3thandle(id fuse.HandleID) (shandle *serveHandle) {
 	c.meta.Lock()
 	defer c.meta.Unlock()
 	if id < fuse.HandleID(len(c.handle)) {
@@ -797,7 +797,7 @@ func (c *Server) serve(r fuse.Request) {
 				Error:   fuse.ESTALE.ErrnoName(),
 				// this is the only place that sets both Error and
 				// Out; not sure if i want to do that; might get rid
-				// of len(c.node) things altogether
+				// of len(c.node) things altog3ther
 				Out: logMissingNode{
 					MaxNode: fuse.NodeID(len(c.node)),
 				},
@@ -1190,7 +1190,7 @@ func (c *Server) handleRequest(ctx context.Context, node Node, snode *serveNode,
 
 	// Handle operations.
 	case *fuse.ReadRequest:
-		shandle := c.getHandle(r.Handle)
+		shandle := c.g3thandle(r.Handle)
 		if shandle == nil {
 			return fuse.ESTALE
 		}
@@ -1255,7 +1255,7 @@ func (c *Server) handleRequest(ctx context.Context, node Node, snode *serveNode,
 		return nil
 
 	case *fuse.WriteRequest:
-		shandle := c.getHandle(r.Handle)
+		shandle := c.g3thandle(r.Handle)
 		if shandle == nil {
 			return fuse.ESTALE
 		}
@@ -1272,7 +1272,7 @@ func (c *Server) handleRequest(ctx context.Context, node Node, snode *serveNode,
 		return fuse.EIO
 
 	case *fuse.FlushRequest:
-		shandle := c.getHandle(r.Handle)
+		shandle := c.g3thandle(r.Handle)
 		if shandle == nil {
 			return fuse.ESTALE
 		}
@@ -1288,7 +1288,7 @@ func (c *Server) handleRequest(ctx context.Context, node Node, snode *serveNode,
 		return nil
 
 	case *fuse.ReleaseRequest:
-		shandle := c.getHandle(r.Handle)
+		shandle := c.g3thandle(r.Handle)
 		if shandle == nil {
 			return fuse.ESTALE
 		}

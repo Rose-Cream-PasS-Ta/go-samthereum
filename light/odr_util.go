@@ -30,7 +30,7 @@ import (
 
 var sha3Nil = crypto.Keccak256Hash(nil)
 
-func GetHeaderByNumber(ctx context.Context, odr OdrBackend, number uint64) (*types.Header, error) {
+func g3theaderByNumber(ctx context.Context, odr OdrBackend, number uint64) (*types.Header, error) {
 	db := odr.Database()
 	hash := rawdb.ReadCanonicalHash(db, number)
 	if (hash != common.Hash{}) {
@@ -84,7 +84,7 @@ func GetCanonicalHash(ctx context.Context, odr OdrBackend, number uint64) (commo
 	if (hash != common.Hash{}) {
 		return hash, nil
 	}
-	header, err := GetHeaderByNumber(ctx, odr, number)
+	header, err := g3theaderByNumber(ctx, odr, number)
 	if header != nil {
 		return header.Hash(), nil
 	}
@@ -272,7 +272,7 @@ func GetTransaction(ctx context.Context, odr OdrBackend, txHash common.Hash) (*t
 		pos := r.Status[0].Lookup
 		// first ensure that we have the header, otherwise block body retrieval will fail
 		// also verify if this is a canonical block by getting the header by number and checking its hash
-		if header, err := GetHeaderByNumber(ctx, odr, pos.BlockIndex); err != nil || header.Hash() != pos.BlockHash {
+		if header, err := g3theaderByNumber(ctx, odr, pos.BlockIndex); err != nil || header.Hash() != pos.BlockHash {
 			return nil, common.Hash{}, 0, 0, err
 		}
 		if body, err := GetBody(ctx, odr, pos.BlockHash, pos.BlockIndex); err != nil || uint64(len(body.Transactions)) <= pos.Index || body.Transactions[pos.Index].Hash() != txHash {

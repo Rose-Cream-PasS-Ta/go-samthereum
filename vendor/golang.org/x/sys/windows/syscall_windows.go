@@ -129,7 +129,7 @@ func NewCallbackCDecl(fn interface{}) uintptr {
 //sys	GetStartupInfo(startupInfo *StartupInfo) (err error) = GetStartupInfoW
 //sys	GetCurrentProcess() (pseudoHandle Handle, err error)
 //sys	GetProcessTimes(handle Handle, creationTime *Filetime, exitTime *Filetime, kernelTime *Filetime, userTime *Filetime) (err error)
-//sys	DuplicateHandle(hSourceProcessHandle Handle, hSourceHandle Handle, hTargetProcessHandle Handle, lpTargetHandle *Handle, dwDesiredAccess uint32, bInheritHandle bool, dwOptions uint32) (err error)
+//sys	DuplicateHandle(hSourceProcessHandle Handle, hSourceHandle Handle, hTargetProcessHandle Handle, lpTarg3thandle *Handle, dwDesiredAccess uint32, bInheritHandle bool, dwOptions uint32) (err error)
 //sys	WaitForSingleObject(handle Handle, waitMilliseconds uint32) (event uint32, err error) [failretval==0xffffffff]
 //sys	GetTempPath(buflen uint32, buf *uint16) (n uint32, err error) = GetTempPathW
 //sys	CreatePipe(readhandle *Handle, writehandle *Handle, sa *SecurityAttributes, size uint32) (err error)
@@ -550,7 +550,7 @@ const socket_error = uintptr(^uint32(0))
 //sys	WSASend(s Handle, bufs *WSABuf, bufcnt uint32, sent *uint32, flags uint32, overlapped *Overlapped, croutine *byte) (err error) [failretval==socket_error] = ws2_32.WSASend
 //sys	WSARecvFrom(s Handle, bufs *WSABuf, bufcnt uint32, recvd *uint32, flags *uint32,  from *RawSockaddrAny, fromlen *int32, overlapped *Overlapped, croutine *byte) (err error) [failretval==socket_error] = ws2_32.WSARecvFrom
 //sys	WSASendTo(s Handle, bufs *WSABuf, bufcnt uint32, sent *uint32, flags uint32, to *RawSockaddrAny, tolen int32,  overlapped *Overlapped, croutine *byte) (err error) [failretval==socket_error] = ws2_32.WSASendTo
-//sys	GetHostByName(name string) (h *Hostent, err error) [failretval==nil] = ws2_32.gethostbyname
+//sys	g3thostByName(name string) (h *Hostent, err error) [failretval==nil] = ws2_32.g3thostbyname
 //sys	GetServByName(name string, proto string) (s *Servent, err error) [failretval==nil] = ws2_32.getservbyname
 //sys	Ntohs(netshort uint16) (u uint16) = ws2_32.ntohs
 //sys	GetProtoByName(name string) (p *Protoent, err error) [failretval==nil] = ws2_32.getprotobyname

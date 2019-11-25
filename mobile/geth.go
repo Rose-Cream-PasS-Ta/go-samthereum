@@ -38,7 +38,7 @@ import (
 	whisper "github.com/ethereum/go-ethereum/whisper/whisperv6"
 )
 
-// NodeConfig represents the collection of configuration values to fine tune the Geth
+// NodeConfig represents the collection of configuration values to fine tune the g3th
 // node embedded into a mobile process. The available values are a subset of the
 // entire API provided by go-ethereum to reduce the maintenance surface and dev
 // complexity.
@@ -94,12 +94,12 @@ func NewNodeConfig() *NodeConfig {
 	return &config
 }
 
-// Node represents a Geth Ethereum node instance.
+// Node represents a g3th Ethereum node instance.
 type Node struct {
 	node *node.Node
 }
 
-// NewNode creates and configures a new Geth node.
+// NewNode creates and configures a new g3th node.
 func NewNode(datadir string, config *NodeConfig) (stack *Node, _ error) {
 	// If no or partial configurations were specified, use defaults
 	if config == nil {

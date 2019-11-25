@@ -23,7 +23,7 @@ dependencies:
 
 test:
   override:
-    # Build Geth and move into a known folder
+    # Build g3th and move into a known folder
     - make g3th
     - cp ./build/bin/g3th $HOME/g3th
 

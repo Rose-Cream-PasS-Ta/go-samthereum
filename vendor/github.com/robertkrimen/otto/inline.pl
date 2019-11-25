@@ -450,7 +450,7 @@ sub newContext {
                 "getUTCDate", 0,
                 "getDay", 0,
                 "getUTCDay", 0,
-                "getHours", 0,
+                "g3thours", 0,
                 "getUTCHours", 0,
                 "getMinutes", 0,
                 "getUTCMinutes", 0,

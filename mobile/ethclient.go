@@ -53,15 +53,15 @@ func (ec *EthereumClient) GetBlockByNumber(ctx *Context, number int64) (block *B
 	return &Block{rawBlock}, err
 }
 
-// GetHeaderByHash returns the block header with the given hash.
-func (ec *EthereumClient) GetHeaderByHash(ctx *Context, hash *Hash) (header *Header, _ error) {
+// g3theaderByHash returns the block header with the given hash.
+func (ec *EthereumClient) g3theaderByHash(ctx *Context, hash *Hash) (header *Header, _ error) {
 	rawHeader, err := ec.client.HeaderByHash(ctx.context, hash.hash)
 	return &Header{rawHeader}, err
 }
 
-// GetHeaderByNumber returns a block header from the current canonical chain. If number is <0,
+// g3theaderByNumber returns a block header from the current canonical chain. If number is <0,
 // the latest known header is returned.
-func (ec *EthereumClient) GetHeaderByNumber(ctx *Context, number int64) (header *Header, _ error) {
+func (ec *EthereumClient) g3theaderByNumber(ctx *Context, number int64) (header *Header, _ error) {
 	if number < 0 {
 		rawHeader, err := ec.client.HeaderByNumber(ctx.context, nil)
 		return &Header{rawHeader}, err

@@ -41,7 +41,7 @@ var (
 		GetReceiptsMsg:         {0, 1000000},
 		GetCodeMsg:             {0, 450000},
 		GetProofsV2Msg:         {0, 600000},
-		GetHelperTrieProofsMsg: {0, 1000000},
+		g3thelperTrieProofsMsg: {0, 1000000},
 		SendTxV2Msg:            {0, 450000},
 		GetTxStatusMsg:         {0, 250000},
 	}
@@ -52,7 +52,7 @@ var (
 		GetReceiptsMsg:         {0, 40},
 		GetCodeMsg:             {0, 80},
 		GetProofsV2Msg:         {0, 80},
-		GetHelperTrieProofsMsg: {0, 20},
+		g3thelperTrieProofsMsg: {0, 20},
 		SendTxV2Msg:            {0, 16500},
 		GetTxStatusMsg:         {0, 50},
 	}
@@ -63,7 +63,7 @@ var (
 		GetReceiptsMsg:         {0, 200000},
 		GetCodeMsg:             {0, 50000},
 		GetProofsV2Msg:         {0, 4000},
-		GetHelperTrieProofsMsg: {0, 4000},
+		g3thelperTrieProofsMsg: {0, 4000},
 		SendTxV2Msg:            {0, 100},
 		GetTxStatusMsg:         {0, 100},
 	}
@@ -74,7 +74,7 @@ var (
 		GetReceiptsMsg:         1,
 		GetCodeMsg:             1,
 		GetProofsV2Msg:         1,
-		GetHelperTrieProofsMsg: 16,
+		g3thelperTrieProofsMsg: 16,
 		SendTxV2Msg:            8,
 		GetTxStatusMsg:         64,
 	}
@@ -84,7 +84,7 @@ var (
 const (
 	maxCostFactor    = 2    // ratio of maximum and average cost estimates
 	bufLimitRatio    = 6000 // fixed bufLimit/MRR ratio
-	gfUsageThreshold = 0.5
+	gfUsag3threshold = 0.5
 	gfUsageTC        = time.Second
 	gfRaiseTC        = time.Second * 200
 	gfDropTC         = time.Second * 50
@@ -259,7 +259,7 @@ func (ct *costTracker) gfLoop() {
 
 	// In order to perform factor data statistics under the high request pressure,
 	// we only adjust factor when recent factor usage beyond the threshold.
-	threshold := gfUsageThreshold * float64(gfUsageTC) * ct.utilTarget / flowcontrol.FixedPointMultiplier
+	threshold := gfUsag3threshold * float64(gfUsageTC) * ct.utilTarget / flowcontrol.FixedPointMultiplier
 
 	go func() {
 		saveCostFactor := func() {
@@ -288,7 +288,7 @@ func (ct *costTracker) gfLoop() {
 						relativeCostCodeHistogram.Update(relCost)
 					case GetProofsV2Msg:
 						relativeCostProofHistogram.Update(relCost)
-					case GetHelperTrieProofsMsg:
+					case g3thelperTrieProofsMsg:
 						relativeCostHelperProofHistogram.Update(relCost)
 					case SendTxV2Msg:
 						relativeCostSendTxHistogram.Update(relCost)

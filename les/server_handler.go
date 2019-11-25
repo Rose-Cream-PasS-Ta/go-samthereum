@@ -302,15 +302,15 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 					var origin *types.Header
 					if hashMode {
 						if first {
-							origin = h.blockchain.GetHeaderByHash(query.Origin.Hash)
+							origin = h.blockchain.g3theaderByHash(query.Origin.Hash)
 							if origin != nil {
 								query.Origin.Number = origin.Number.Uint64()
 							}
 						} else {
-							origin = h.blockchain.GetHeader(query.Origin.Hash, query.Origin.Number)
+							origin = h.blockchain.g3theader(query.Origin.Hash, query.Origin.Number)
 						}
 					} else {
-						origin = h.blockchain.GetHeaderByNumber(query.Origin.Number)
+						origin = h.blockchain.g3theaderByNumber(query.Origin.Number)
 					}
 					if origin == nil {
 						atomic.AddUint32(&p.invalidCount, 1)
@@ -341,7 +341,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 							p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 							unknown = true
 						} else {
-							if header := h.blockchain.GetHeaderByNumber(next); header != nil {
+							if header := h.blockchain.g3theaderByNumber(next); header != nil {
 								nextHash := header.Hash()
 								expOldHash, _ := h.blockchain.GetAncestor(nextHash, next, query.Skip+1, &maxNonCanonical)
 								if expOldHash == query.Origin.Hash {
@@ -455,7 +455,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 						return
 					}
 					// Look up the root hash belonging to the request
-					header := h.blockchain.GetHeaderByHash(request.BHash)
+					header := h.blockchain.g3theaderByHash(request.BHash)
 					if header == nil {
 						p.Log().Warn("Failed to retrieve associate header for code", "hash", request.BHash)
 						atomic.AddUint32(&p.invalidCount, 1)
@@ -532,7 +532,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 					// Retrieve the requested block's receipts, skipping if unknown to us
 					results := h.blockchain.GetReceiptsByHash(hash)
 					if results == nil {
-						if header := h.blockchain.GetHeaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
+						if header := h.blockchain.g3theaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
 							atomic.AddUint32(&p.invalidCount, 1)
 							continue
 						}
@@ -594,7 +594,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 					if request.BHash != lastBHash {
 						root, lastBHash = common.Hash{}, request.BHash
 
-						if header = h.blockchain.GetHeaderByHash(request.BHash); header == nil {
+						if header = h.blockchain.g3theaderByHash(request.BHash); header == nil {
 							p.Log().Warn("Failed to retrieve header for proof", "hash", request.BHash)
 							atomic.AddUint32(&p.invalidCount, 1)
 							continue
@@ -657,7 +657,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 			}()
 		}
 
-	case GetHelperTrieProofsMsg:
+	case g3thelperTrieProofsMsg:
 		p.Log().Trace("Received helper trie proof request")
 		if metrics.EnabledExpensive {
 			miscInHelperTriePacketsMeter.Mark(1)
@@ -698,7 +698,7 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 						auxTrie, lastType, lastIdx = nil, request.Type, request.TrieIdx
 
 						var prefix string
-						if root, prefix = h.getHelperTrie(request.Type, request.TrieIdx); root != (common.Hash{}) {
+						if root, prefix = h.g3thelperTrie(request.Type, request.TrieIdx); root != (common.Hash{}) {
 							auxTrie, _ = trie.New(root, trie.NewDatabase(rawdb.NewTable(h.chainDb, prefix)))
 						}
 					}
@@ -849,8 +849,8 @@ func (h *serverHandler) getAccount(triedb *trie.Database, root, hash common.Hash
 	return account, nil
 }
 
-// getHelperTrie returns the post-processed trie root for the given trie ID and section index
-func (h *serverHandler) getHelperTrie(typ uint, index uint64) (common.Hash, string) {
+// g3thelperTrie returns the post-processed trie root for the given trie ID and section index
+func (h *serverHandler) g3thelperTrie(typ uint, index uint64) (common.Hash, string) {
 	switch typ {
 	case htCanonical:
 		sectionHead := rawdb.ReadCanonicalHash(h.chainDb, (index+1)*h.server.iConfig.ChtSize-1)

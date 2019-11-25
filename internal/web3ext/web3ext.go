@@ -127,8 +127,8 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
-			name: 'getHashrate',
-			call: 'ethash_getHashrate',
+			name: 'g3thashrate',
+			call: 'ethash_g3thashrate',
 			params: 0
 		}),
 		new web3._extend.Method({
@@ -500,13 +500,13 @@ web3._extend({
 			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
 		}),
 		new web3._extend.Method({
-			name: 'getHeaderByNumber',
-			call: 'eth_getHeaderByNumber',
+			name: 'g3theaderByNumber',
+			call: 'eth_g3theaderByNumber',
 			params: 1
 		}),
 		new web3._extend.Method({
-			name: 'getHeaderByHash',
-			call: 'eth_getHeaderByHash',
+			name: 'g3theaderByHash',
+			call: 'eth_g3theaderByHash',
 			params: 1
 		}),
 		new web3._extend.Method({
@@ -593,8 +593,8 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
-			name: 'getHashrate',
-			call: 'miner_getHashrate'
+			name: 'g3thashrate',
+			call: 'miner_g3thashrate'
 		}),
 	],
 	properties: []

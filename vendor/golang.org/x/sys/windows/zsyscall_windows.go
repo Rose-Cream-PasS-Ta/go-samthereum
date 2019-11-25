@@ -197,7 +197,7 @@ var (
 	procWSASend                            = modws2_32.NewProc("WSASend")
 	procWSARecvFrom                        = modws2_32.NewProc("WSARecvFrom")
 	procWSASendTo                          = modws2_32.NewProc("WSASendTo")
-	procgethostbyname                      = modws2_32.NewProc("gethostbyname")
+	procg3thostbyname                      = modws2_32.NewProc("g3thostbyname")
 	procgetservbyname                      = modws2_32.NewProc("getservbyname")
 	procntohs                              = modws2_32.NewProc("ntohs")
 	procgetprotobyname                     = modws2_32.NewProc("getprotobyname")
@@ -1020,14 +1020,14 @@ func GetProcessTimes(handle Handle, creationTime *Filetime, exitTime *Filetime, 
 	return
 }
 
-func DuplicateHandle(hSourceProcessHandle Handle, hSourceHandle Handle, hTargetProcessHandle Handle, lpTargetHandle *Handle, dwDesiredAccess uint32, bInheritHandle bool, dwOptions uint32) (err error) {
+func DuplicateHandle(hSourceProcessHandle Handle, hSourceHandle Handle, hTargetProcessHandle Handle, lpTarg3thandle *Handle, dwDesiredAccess uint32, bInheritHandle bool, dwOptions uint32) (err error) {
 	var _p0 uint32
 	if bInheritHandle {
 		_p0 = 1
 	} else {
 		_p0 = 0
 	}
-	r1, _, e1 := syscall.Syscall9(procDuplicateHandle.Addr(), 7, uintptr(hSourceProcessHandle), uintptr(hSourceHandle), uintptr(hTargetProcessHandle), uintptr(unsafe.Pointer(lpTargetHandle)), uintptr(dwDesiredAccess), uintptr(_p0), uintptr(dwOptions), 0, 0)
+	r1, _, e1 := syscall.Syscall9(procDuplicateHandle.Addr(), 7, uintptr(hSourceProcessHandle), uintptr(hSourceHandle), uintptr(hTargetProcessHandle), uintptr(unsafe.Pointer(lpTarg3thandle)), uintptr(dwDesiredAccess), uintptr(_p0), uintptr(dwOptions), 0, 0)
 	if r1 == 0 {
 		if e1 != 0 {
 			err = errnoErr(e1)
@@ -2061,17 +2061,17 @@ func WSASendTo(s Handle, bufs *WSABuf, bufcnt uint32, sent *uint32, flags uint32
 	return
 }
 
-func GetHostByName(name string) (h *Hostent, err error) {
+func g3thostByName(name string) (h *Hostent, err error) {
 	var _p0 *byte
 	_p0, err = syscall.BytePtrFromString(name)
 	if err != nil {
 		return
 	}
-	return _GetHostByName(_p0)
+	return _g3thostByName(_p0)
 }
 
-func _GetHostByName(name *byte) (h *Hostent, err error) {
-	r0, _, e1 := syscall.Syscall(procgethostbyname.Addr(), 1, uintptr(unsafe.Pointer(name)), 0, 0)
+func _g3thostByName(name *byte) (h *Hostent, err error) {
+	r0, _, e1 := syscall.Syscall(procg3thostbyname.Addr(), 1, uintptr(unsafe.Pointer(name)), 0, 0)
 	h = (*Hostent)(unsafe.Pointer(r0))
 	if h == nil {
 		if e1 != 0 {

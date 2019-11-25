@@ -82,8 +82,8 @@ func (h *Hash) SetHex(hash string) error {
 	return nil
 }
 
-// GetHex retrieves the hex string representation of the hash.
-func (h *Hash) GetHex() string {
+// g3thex retrieves the hex string representation of the hash.
+func (h *Hash) g3thex() string {
 	return h.hash.Hex()
 }
 
@@ -183,8 +183,8 @@ func (a *Address) SetHex(address string) error {
 	return nil
 }
 
-// GetHex retrieves the hex string representation of the address.
-func (a *Address) GetHex() string {
+// g3thex retrieves the hex string representation of the address.
+func (a *Address) g3thex() string {
 	return a.address.Hex()
 }
 

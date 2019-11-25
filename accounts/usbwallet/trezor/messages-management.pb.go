@@ -594,7 +594,7 @@ func (m *ApplySettings) GetUsePassphrase() bool {
 	return false
 }
 
-func (m *ApplySettings) GetHomescreen() []byte {
+func (m *ApplySettings) g3thomescreen() []byte {
 	if m != nil {
 		return m.Homescreen
 	}

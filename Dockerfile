@@ -1,4 +1,4 @@
-# Build Geth in a stock Go builder container
+# Build g3th in a stock Go builder container
 FROM golang:1.13-alpine as builder
 
 RUN apk add --no-cache make gcc musl-dev linux-headers git
@@ -6,7 +6,7 @@ RUN apk add --no-cache make gcc musl-dev linux-headers git
 ADD . /go-ethereum
 RUN cd /go-ethereum && make g3th
 
-# Pull Geth into a second stage deploy alpine container
+# Pull g3th into a second stage deploy alpine container
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates

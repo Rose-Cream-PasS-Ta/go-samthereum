@@ -1,6 +1,6 @@
 ## Go Ethereum Dashboard
 
-The dashboard is a data visualizer integrated into geth, intended to collect and visualize useful information of an Ethereum node. It consists of two parts:
+The dashboard is a data visualizer integrated into g3th, intended to collect and visualize useful information of an Ethereum node. It consists of two parts:
 
 * The client visualizes the collected data.
 * The server collects the data, and updates the clients.
@@ -15,14 +15,14 @@ As the dashboard depends on certain NPM packages (which are not included in the 
 $ (cd dashboard/assets && npm install)
 ```
 
-Normally the dashboard assets are bundled into Geth via `go-bindata` to avoid external dependencies. Rebuilding Geth after each UI modification however is not feasible from a developer perspective. Instead, we can run `webpack` in watch mode to automatically rebundle the UI, and ask `geth` to use external assets to not rely on compiled resources:
+Normally the dashboard assets are bundled into g3th via `go-bindata` to avoid external dependencies. Rebuilding g3th after each UI modification however is not feasible from a developer perspective. Instead, we can run `webpack` in watch mode to automatically rebundle the UI, and ask `g3th` to use external assets to not rely on compiled resources:
 
 ```
 $ (cd dashboard/assets && ./node_modules/.bin/webpack --watch)
-$ geth --dashboard --dashboard.assets=dashboard/assets/public --vmodule=dashboard=5
+$ g3th --dashboard --dashboard.assets=dashboard/assets/public --vmodule=dashboard=5
 ```
 
-To bundle up the final UI into Geth, run `webpack` and `go generate`:
+To bundle up the final UI into g3th, run `webpack` and `go generate`:
 
 ```
 $ (cd dashboard/assets && ./node_modules/.bin/webpack)

@@ -282,9 +282,9 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 	}
 	// Check the current state of the block hashes and make sure that we do not have any of the bad blocks in our chain
 	for hash := range BadHashes {
-		if header := bc.GetHeaderByHash(hash); header != nil {
+		if header := bc.g3theaderByHash(hash); header != nil {
 			// get the canonical block corresponding to the offending header's number
-			headerByNumber := bc.GetHeaderByNumber(header.Number.Uint64())
+			headerByNumber := bc.g3theaderByNumber(header.Number.Uint64())
 			// make sure the headerByNumber (if present) is in our current canonical chain
 			if headerByNumber != nil && headerByNumber.Hash() == header.Hash() {
 				log.Error("Found bad hash, rewinding chain", "number", header.Number, "hash", header.ParentHash)
@@ -354,7 +354,7 @@ func (bc *BlockChain) loadLastState() error {
 	// Restore the last known head header
 	currentHeader := currentBlock.Header()
 	if head := rawdb.ReadHeadHeaderHash(bc.db); head != (common.Hash{}) {
-		if header := bc.GetHeaderByHash(head); header != nil {
+		if header := bc.g3theaderByHash(head); header != nil {
 			currentHeader = header
 		}
 	}
@@ -886,7 +886,7 @@ func (bc *BlockChain) Rollback(chain []common.Hash) {
 
 		currentHeader := bc.hc.CurrentHeader()
 		if currentHeader.Hash() == hash {
-			bc.hc.SetCurrentHeader(bc.GetHeader(currentHeader.ParentHash, currentHeader.Number.Uint64()-1))
+			bc.hc.SetCurrentHeader(bc.g3theader(currentHeader.ParentHash, currentHeader.Number.Uint64()-1))
 		}
 		if currentFastBlock := bc.CurrentFastBlock(); currentFastBlock.Hash() == hash {
 			newFastBlock := bc.GetBlock(currentFastBlock.ParentHash(), currentFastBlock.NumberU64()-1)
@@ -1039,7 +1039,7 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 				logged = time.Now()
 				count  int
 			)
-			// Migrate all ancient blocks. This can happen if someone upgrades from Geth
+			// Migrate all ancient blocks. This can happen if someone upgrades from g3th
 			// 1.8.x to 1.9.x mid-fast-sync. Perhaps we can get rid of this path in the
 			// long term.
 			for {
@@ -1321,7 +1321,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 			if bc.gcproc > bc.cacheConfig.TrieTimeLimit {
 				// If the header is missing (canonical chain behind), we're reorging a low
 				// diff sidechain. Suspend committing until this operation is completed.
-				header := bc.GetHeaderByNumber(chosen)
+				header := bc.g3theaderByNumber(chosen)
 				if header == nil {
 					log.Warn("Reorg in progress, trie commit postponed", "number", chosen)
 				} else {
@@ -1605,7 +1605,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 
 		parent := it.previous()
 		if parent == nil {
-			parent = bc.GetHeader(block.ParentHash(), block.NumberU64()-1)
+			parent = bc.g3theader(block.ParentHash(), block.NumberU64()-1)
 		}
 		statedb, err := state.New(parent.Root, bc.stateCache)
 		if err != nil {
@@ -1819,7 +1819,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 		hashes = append(hashes, parent.Hash())
 		numbers = append(numbers, parent.Number.Uint64())
 
-		parent = bc.GetHeader(parent.ParentHash, parent.Number.Uint64()-1)
+		parent = bc.g3theader(parent.ParentHash, parent.Number.Uint64()-1)
 	}
 	if parent == nil {
 		return it.index, nil, nil, errors.New("missing parent")
@@ -2130,16 +2130,16 @@ func (bc *BlockChain) GetTdByHash(hash common.Hash) *big.Int {
 	return bc.hc.GetTdByHash(hash)
 }
 
-// GetHeader retrieves a block header from the database by hash and number,
+// g3theader retrieves a block header from the database by hash and number,
 // caching it if found.
-func (bc *BlockChain) GetHeader(hash common.Hash, number uint64) *types.Header {
-	return bc.hc.GetHeader(hash, number)
+func (bc *BlockChain) g3theader(hash common.Hash, number uint64) *types.Header {
+	return bc.hc.g3theader(hash, number)
 }
 
-// GetHeaderByHash retrieves a block header from the database by hash, caching it if
+// g3theaderByHash retrieves a block header from the database by hash, caching it if
 // found.
-func (bc *BlockChain) GetHeaderByHash(hash common.Hash) *types.Header {
-	return bc.hc.GetHeaderByHash(hash)
+func (bc *BlockChain) g3theaderByHash(hash common.Hash) *types.Header {
+	return bc.hc.g3theaderByHash(hash)
 }
 
 // HasHeader checks if a block header is present in the database or not, caching
@@ -2168,10 +2168,10 @@ func (bc *BlockChain) GetAncestor(hash common.Hash, number, ancestor uint64, max
 	return bc.hc.GetAncestor(hash, number, ancestor, maxNonCanonical)
 }
 
-// GetHeaderByNumber retrieves a block header from the database by number,
+// g3theaderByNumber retrieves a block header from the database by number,
 // caching it (associated with its hash) if found.
-func (bc *BlockChain) GetHeaderByNumber(number uint64) *types.Header {
-	return bc.hc.GetHeaderByNumber(number)
+func (bc *BlockChain) g3theaderByNumber(number uint64) *types.Header {
+	return bc.hc.g3theaderByNumber(number)
 }
 
 // GetTransactionLookup retrieves the lookup associate with the given transaction

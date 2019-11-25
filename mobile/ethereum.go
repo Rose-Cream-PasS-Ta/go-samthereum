@@ -80,7 +80,7 @@ type SyncProgress struct {
 
 func (p *SyncProgress) GetStartingBlock() int64 { return int64(p.progress.StartingBlock) }
 func (p *SyncProgress) GetCurrentBlock() int64  { return int64(p.progress.CurrentBlock) }
-func (p *SyncProgress) GetHighestBlock() int64  { return int64(p.progress.HighestBlock) }
+func (p *SyncProgress) g3thighestBlock() int64  { return int64(p.progress.HighestBlock) }
 func (p *SyncProgress) GetPulledStates() int64  { return int64(p.progress.PulledStates) }
 func (p *SyncProgress) GetKnownStates() int64   { return int64(p.progress.KnownStates) }
 

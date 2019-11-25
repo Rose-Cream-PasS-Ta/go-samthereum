@@ -84,7 +84,7 @@ var customGenesisTests = []struct {
 	},
 }
 
-// Tests that initializing Geth with a custom genesis block and chain definitions
+// Tests that initializing g3th with a custom genesis block and chain definitions
 // work properly.
 func TestCustomGenesis(t *testing.T) {
 	for i, tt := range customGenesisTests {
@@ -97,10 +97,10 @@ func TestCustomGenesis(t *testing.T) {
 		if err := ioutil.WriteFile(json, []byte(tt.genesis), 0600); err != nil {
 			t.Fatalf("test %d: failed to write genesis file: %v", i, err)
 		}
-		runGeth(t, "--datadir", datadir, "init", json).WaitExit()
+		rung3th(t, "--datadir", datadir, "init", json).WaitExit()
 
 		// Query the custom genesis block
-		g3th := runGeth(t,
+		g3th := rung3th(t,
 			"--datadir", datadir, "--maxpeers", "0", "--port", "0",
 			"--nodiscover", "--nat", "none", "--ipcdisable",
 			"--exec", tt.query, "console")

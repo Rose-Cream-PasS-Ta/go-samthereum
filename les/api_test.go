@@ -106,7 +106,7 @@ func testCapacityAPI(t *testing.T, clientCount int) {
 		if err != nil {
 			t.Fatalf("Failed to obtain rpc client: %v", err)
 		}
-		headNum, headHash := getHead(ctx, t, serverRpcClient)
+		headNum, headHash := g3thead(ctx, t, serverRpcClient)
 		minCap, freeCap, totalCap := getCapacityInfo(ctx, t, serverRpcClient)
 		testCap := totalCap * 3 / 4
 		t.Logf("Server testCap: %d  minCap: %d  head number: %d  head hash: %064x\n", testCap, minCap, headNum, headHash)
@@ -135,7 +135,7 @@ func testCapacityAPI(t *testing.T, clientCount int) {
 					t.Fatalf("Timeout")
 				default:
 				}
-				num, hash := getHead(ctx, t, clientRpcClients[i])
+				num, hash := g3thead(ctx, t, clientRpcClients[i])
 				if num == headNum && hash == headHash {
 					t.Log("client", i, "synced")
 					break
@@ -301,7 +301,7 @@ func testCapacityAPI(t *testing.T, clientCount int) {
 	}
 }
 
-func getHead(ctx context.Context, t *testing.T, client *rpc.Client) (uint64, common.Hash) {
+func g3thead(ctx context.Context, t *testing.T, client *rpc.Client) (uint64, common.Hash) {
 	res := make(map[string]interface{})
 	if err := client.CallContext(ctx, &res, "eth_getBlockByNumber", "latest", false); err != nil {
 		t.Fatalf("Failed to obtain head block: %v", err)

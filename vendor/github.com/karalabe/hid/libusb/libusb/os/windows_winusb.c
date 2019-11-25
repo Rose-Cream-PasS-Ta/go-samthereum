@@ -1317,7 +1317,7 @@ static int windows_get_device_list(struct libusb_context *ctx, struct discovered
 	guid[HUB_PASS] = &GUID_DEVINTERFACE_USB_HUB;
 	guid[GEN_PASS] = NULL;
 	guid[DEV_PASS] = &GUID_DEVINTERFACE_USB_DEVICE;
-	HidD_GetHidGuid(&hid_guid);
+	HidD_g3thidGuid(&hid_guid);
 	guid[HID_PASS] = &hid_guid;
 	nb_guids = HID_PASS + 1;
 
@@ -3452,7 +3452,7 @@ static int hid_init(int sub_api, struct libusb_context *ctx)
 {
 	DLL_GET_HANDLE(hid);
 	DLL_LOAD_FUNC(hid, HidD_GetAttributes, TRUE);
-	DLL_LOAD_FUNC(hid, HidD_GetHidGuid, TRUE);
+	DLL_LOAD_FUNC(hid, HidD_g3thidGuid, TRUE);
 	DLL_LOAD_FUNC(hid, HidD_GetPreparsedData, TRUE);
 	DLL_LOAD_FUNC(hid, HidD_FreePreparsedData, TRUE);
 	DLL_LOAD_FUNC(hid, HidD_GetManufacturerString, TRUE);

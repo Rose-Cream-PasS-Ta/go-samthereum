@@ -69,7 +69,7 @@ func (b *EthAPIBackend) HeaderByNumber(ctx context.Context, number rpc.BlockNumb
 	if number == rpc.LatestBlockNumber {
 		return b.eth.blockchain.CurrentBlock().Header(), nil
 	}
-	return b.eth.blockchain.GetHeaderByNumber(uint64(number)), nil
+	return b.eth.blockchain.g3theaderByNumber(uint64(number)), nil
 }
 
 func (b *EthAPIBackend) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*types.Header, error) {
@@ -77,7 +77,7 @@ func (b *EthAPIBackend) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash 
 		return b.HeaderByNumber(ctx, blockNr)
 	}
 	if hash, ok := blockNrOrHash.Hash(); ok {
-		header := b.eth.blockchain.GetHeaderByHash(hash)
+		header := b.eth.blockchain.g3theaderByHash(hash)
 		if header == nil {
 			return nil, errors.New("header for hash not found")
 		}
@@ -90,7 +90,7 @@ func (b *EthAPIBackend) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash 
 }
 
 func (b *EthAPIBackend) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {
-	return b.eth.blockchain.GetHeaderByHash(hash), nil
+	return b.eth.blockchain.g3theaderByHash(hash), nil
 }
 
 func (b *EthAPIBackend) BlockByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Block, error) {
@@ -115,7 +115,7 @@ func (b *EthAPIBackend) BlockByNumberOrHash(ctx context.Context, blockNrOrHash r
 		return b.BlockByNumber(ctx, blockNr)
 	}
 	if hash, ok := blockNrOrHash.Hash(); ok {
-		header := b.eth.blockchain.GetHeaderByHash(hash)
+		header := b.eth.blockchain.g3theaderByHash(hash)
 		if header == nil {
 			return nil, errors.New("header for hash not found")
 		}

@@ -1779,7 +1779,7 @@ var ETH_UNITS = [
     'ether',
     'grand',
     'Mether',
-    'Gether',
+    'g3ther',
     'Tether',
     'Pether',
     'Eether',
@@ -5154,14 +5154,14 @@ var methods = function () {
         params: 3
     });
 
-    var getHex = new Method({
-        name: 'getHex',
-        call: 'db_getHex',
+    var g3thex = new Method({
+        name: 'g3thex',
+        call: 'db_g3thex',
         params: 2
     });
 
     return [
-        putString, getString, putHex, getHex
+        putString, getString, putHex, g3thex
     ];
 };
 
