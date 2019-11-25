@@ -127,8 +127,8 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
-			name: 'gethashrate',
-			call: 'ethash_gethashrate',
+			name: 'GetHashrate',
+			call: 'ethash_GetHashrate',
 			params: 0
 		}),
 		new web3._extend.Method({
@@ -593,8 +593,8 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
-			name: 'gethashrate',
-			call: 'miner_gethashrate'
+			name: 'GetHashrate',
+			call: 'miner_GetHashrate'
 		}),
 	],
 	properties: []
